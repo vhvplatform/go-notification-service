@@ -39,3 +39,22 @@ type GetNotificationsRequest struct {
 	Page     int                `form:"page"`
 	PageSize int                `form:"page_size"`
 }
+
+// SendSMSRequest represents a request to send an SMS
+type SendSMSRequest struct {
+	TenantID string `json:"tenant_id" binding:"required"`
+	To       string `json:"to" binding:"required"`
+	Message  string `json:"message" binding:"required"`
+}
+
+// BulkEmailRequest represents a request to send bulk emails
+type BulkEmailRequest struct {
+	TenantID   string            `json:"tenant_id" binding:"required"`
+	Recipients []string          `json:"recipients" binding:"required,min=1"`
+	Subject    string            `json:"subject" binding:"required"`
+	Body       string            `json:"body" binding:"required"`
+	IsHTML     bool              `json:"is_html"`
+	TemplateID string            `json:"template_id,omitempty"`
+	Variables  map[string]string `json:"variables,omitempty"`
+	Priority   int               `json:"priority"`
+}
