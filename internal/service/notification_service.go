@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/longvhv/saas-framework-go/pkg/logger"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
@@ -13,15 +14,17 @@ type NotificationService struct {
 	notifRepo      *repository.NotificationRepository
 	emailService   *EmailService
 	webhookService *WebhookService
+	smsService     *SMSService
 	log            *logger.Logger
 }
 
 // NewNotificationService creates a new notification service
-func NewNotificationService(notifRepo *repository.NotificationRepository, emailService *EmailService, webhookService *WebhookService, log *logger.Logger) *NotificationService {
+func NewNotificationService(notifRepo *repository.NotificationRepository, emailService *EmailService, webhookService *WebhookService, smsService *SMSService, log *logger.Logger) *NotificationService {
 	return &NotificationService{
 		notifRepo:      notifRepo,
 		emailService:   emailService,
 		webhookService: webhookService,
+		smsService:     smsService,
 		log:            log,
 	}
 }
@@ -36,6 +39,15 @@ func (s *NotificationService) SendEmail(ctx context.Context, req *domain.SendEma
 func (s *NotificationService) SendWebhook(ctx context.Context, req *domain.SendWebhookRequest) error {
 	s.log.Info("Sending webhook notification", "tenant_id", req.TenantID, "url", req.URL)
 	return s.webhookService.SendWebhook(ctx, req)
+}
+
+// SendSMS sends an SMS notification
+func (s *NotificationService) SendSMS(ctx context.Context, req *domain.SendSMSRequest) error {
+	s.log.Info("Sending SMS notification", "tenant_id", req.TenantID, "to", req.To)
+	if s.smsService == nil {
+		return fmt.Errorf("SMS service not configured")
+	}
+	return s.smsService.SendSMS(ctx, req)
 }
 
 // GetNotifications retrieves notifications with pagination
@@ -79,8 +91,8 @@ func (s *NotificationService) ProcessEvent(ctx context.Context, event *domain.Ev
 
 // handleUserRegistered handles user registration events
 func (s *NotificationService) handleUserRegistered(ctx context.Context, event *domain.Event) error {
-	email, ok := event.Email
-	if !ok || email == "" {
+	email := event.Email
+	if email == "" {
 		s.log.Warn("User registration event missing email", "event", event)
 		return nil
 	}
@@ -98,8 +110,8 @@ func (s *NotificationService) handleUserRegistered(ctx context.Context, event *d
 
 // handlePasswordReset handles password reset events
 func (s *NotificationService) handlePasswordReset(ctx context.Context, event *domain.Event) error {
-	email, ok := event.Email
-	if !ok || email == "" {
+	email := event.Email
+	if email == "" {
 		return nil
 	}
 
@@ -130,8 +142,8 @@ func (s *NotificationService) handleTenantCreated(ctx context.Context, event *do
 
 // handlePaymentCompleted handles payment completion events
 func (s *NotificationService) handlePaymentCompleted(ctx context.Context, event *domain.Event) error {
-	email, ok := event.Email
-	if !ok || email == "" {
+	email := event.Email
+	if email == "" {
 		return nil
 	}
 
