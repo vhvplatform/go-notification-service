@@ -9,19 +9,31 @@ import (
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/repository"
 )
 
-const maxRetries = 3
+// Default maximum retry attempts before sending to DLQ
+const defaultMaxRetries = 3
 
 // DeadLetterQueue handles failed notifications
 type DeadLetterQueue struct {
-	repo *repository.FailedNotificationRepository
-	log  *logger.Logger
+	repo       *repository.FailedNotificationRepository
+	log        *logger.Logger
+	maxRetries int
 }
 
 // NewDeadLetterQueue creates a new dead letter queue
 func NewDeadLetterQueue(repo *repository.FailedNotificationRepository, log *logger.Logger) *DeadLetterQueue {
 	return &DeadLetterQueue{
-		repo: repo,
-		log:  log,
+		repo:       repo,
+		log:        log,
+		maxRetries: defaultMaxRetries,
+	}
+}
+
+// NewDeadLetterQueueWithRetries creates a new dead letter queue with custom max retries
+func NewDeadLetterQueueWithRetries(repo *repository.FailedNotificationRepository, log *logger.Logger, maxRetries int) *DeadLetterQueue {
+	return &DeadLetterQueue{
+		repo:       repo,
+		log:        log,
+		maxRetries: maxRetries,
 	}
 }
 
@@ -96,8 +108,8 @@ func (dlq *DeadLetterQueue) Retry(ctx context.Context, id string, notificationSe
 }
 
 // ShouldSendToDLQ checks if a notification should be sent to DLQ
-func ShouldSendToDLQ(notification *domain.Notification) bool {
-	return notification.RetryCount >= maxRetries
+func (dlq *DeadLetterQueue) ShouldSendToDLQ(notification *domain.Notification) bool {
+	return notification.RetryCount >= dlq.maxRetries
 }
 
 // NotificationService interface for retry functionality

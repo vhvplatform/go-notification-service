@@ -56,7 +56,11 @@ func (p *SMTPPool) createConnection() (*smtp.Client, error) {
 	var err error
 
 	if p.config.UseTLS {
-		tlsConfig := &tls.Config{ServerName: p.config.Host}
+		tlsConfig := &tls.Config{
+			ServerName:         p.config.Host,
+			InsecureSkipVerify: false, // Always verify certificates in production
+			MinVersion:         tls.VersionTLS12,
+		}
 		conn, err := tls.Dial("tcp", addr, tlsConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to dial TLS: %w", err)

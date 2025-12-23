@@ -59,12 +59,8 @@ func (s *BulkEmailService) worker(id int) {
 			s.log.Info("Stopping bulk email worker", "worker_id", id)
 			return
 		default:
-			// Try to get a job without blocking for too long
-			job := s.queue.TryPop()
-			if job == nil {
-				time.Sleep(100 * time.Millisecond)
-				continue
-			}
+			// Use blocking Pop instead of TryPop with sleep
+			job := s.queue.Pop() // This blocks until a job is available
 
 			// Update queue size metric
 			metrics.EmailQueueSize.Set(float64(s.queue.Len()))

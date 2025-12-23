@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/metrics"
 	"golang.org/x/time/rate"
 )
@@ -49,27 +50,35 @@ func (rl *TenantRateLimiter) GetLimiter(tenantID string) *rate.Limiter {
 // RateLimitMiddleware creates a rate limiting middleware
 func RateLimitMiddleware(rl *TenantRateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Try to extract tenant_id from JSON body
-		var req struct {
-			TenantID string `json:"tenant_id"`
+		// Try to extract tenant_id from query parameter first (doesn't consume body)
+		tenantID := c.Query("tenant_id")
+		
+		// If not in query, try from form data
+		if tenantID == "" {
+			tenantID = c.PostForm("tenant_id")
 		}
-
-		// Read the body, but don't consume it
-		if err := c.ShouldBindJSON(&req); err != nil {
-			// If JSON parsing fails, try query param
-			req.TenantID = c.Query("tenant_id")
-			
-			// If still empty, allow through (will fail validation later)
-			if req.TenantID == "" {
-				c.Next()
-				return
+		
+		// If still empty, try from JSON body (use peek method to not consume)
+		if tenantID == "" {
+			var req struct {
+				TenantID string `json:"tenant_id"`
+			}
+			// ShouldBindBodyWith allows binding without consuming the body
+			if err := c.ShouldBindBodyWith(&req, binding.JSON); err == nil {
+				tenantID = req.TenantID
 			}
 		}
+		
+		// If still empty, allow through (will fail validation later)
+		if tenantID == "" {
+			c.Next()
+			return
+		}
 
-		limiter := rl.GetLimiter(req.TenantID)
+		limiter := rl.GetLimiter(tenantID)
 
 		if !limiter.Allow() {
-			metrics.RateLimitExceeded.WithLabelValues(req.TenantID).Inc()
+			metrics.RateLimitExceeded.WithLabelValues(tenantID).Inc()
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error": "Rate limit exceeded. Please try again later.",
 			})
