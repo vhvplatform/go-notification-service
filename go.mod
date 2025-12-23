@@ -4,8 +4,12 @@ go 1.21
 
 require (
 	github.com/gin-gonic/gin v1.9.1
+	github.com/google/uuid v1.5.0
 	github.com/longvhv/saas-framework-go/pkg v0.0.0
+	github.com/prometheus/client_golang v1.18.0
+	github.com/robfig/cron/v3 v3.0.1
 	go.mongodb.org/mongo-driver v1.13.1
+	golang.org/x/time v0.5.0
 )
 
 require (
