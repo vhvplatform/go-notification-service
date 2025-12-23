@@ -3,7 +3,6 @@ package consumer
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/longvhv/saas-framework-go/pkg/logger"
@@ -113,7 +112,7 @@ func (c *EventConsumer) consume() error {
 	}
 
 	// Start consuming
-	messages, err := c.client.Consume(notificationQueue)
+	messages, err := c.client.Consume(notificationQueue, notificationRoutingKey)
 	if err != nil {
 		c.log.Error("Failed to start consuming", "error", err)
 		return err

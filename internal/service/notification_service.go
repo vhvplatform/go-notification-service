@@ -91,8 +91,8 @@ func (s *NotificationService) ProcessEvent(ctx context.Context, event *domain.Ev
 
 // handleUserRegistered handles user registration events
 func (s *NotificationService) handleUserRegistered(ctx context.Context, event *domain.Event) error {
-	email, ok := event.Email
-	if !ok || email == "" {
+	email := event.Email
+	if email == "" {
 		s.log.Warn("User registration event missing email", "event", event)
 		return nil
 	}
@@ -110,8 +110,8 @@ func (s *NotificationService) handleUserRegistered(ctx context.Context, event *d
 
 // handlePasswordReset handles password reset events
 func (s *NotificationService) handlePasswordReset(ctx context.Context, event *domain.Event) error {
-	email, ok := event.Email
-	if !ok || email == "" {
+	email := event.Email
+	if email == "" {
 		return nil
 	}
 
@@ -142,8 +142,8 @@ func (s *NotificationService) handleTenantCreated(ctx context.Context, event *do
 
 // handlePaymentCompleted handles payment completion events
 func (s *NotificationService) handlePaymentCompleted(ctx context.Context, event *domain.Event) error {
-	email, ok := event.Email
-	if !ok || email == "" {
+	email := event.Email
+	if email == "" {
 		return nil
 	}
 

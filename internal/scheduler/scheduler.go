@@ -8,7 +8,6 @@ import (
 	"github.com/longvhv/saas-framework-go/pkg/logger"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/repository"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/service"
 	"github.com/robfig/cron/v3"
 )
 
