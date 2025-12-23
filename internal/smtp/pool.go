@@ -102,7 +102,8 @@ func (p *SMTPPool) Get() (*smtp.Client, error) {
 	case client := <-p.connections:
 		// Test connection with NOOP
 		if err := client.Noop(); err != nil {
-			// Connection dead, create new one
+			// Connection dead, close it and create new one
+			client.Quit()
 			newClient, err := p.createConnection()
 			if err != nil {
 				return nil, fmt.Errorf("failed to create new connection: %w", err)

@@ -86,12 +86,17 @@ func (s *BulkEmailService) worker(id int) {
 func (s *BulkEmailService) SendBulk(ctx context.Context, req *domain.BulkEmailRequest) error {
 	s.log.Info("Queuing bulk emails", "tenant_id", req.TenantID, "recipients", len(req.Recipients))
 
-	// Determine priority
-	priority := queue.PriorityNormal
-	if req.Priority == 0 {
+	// Map request priority to queue priority
+	var priority queue.Priority
+	switch req.Priority {
+	case 0:
 		priority = queue.PriorityHigh
-	} else if req.Priority == 2 {
+	case 1:
+		priority = queue.PriorityNormal
+	case 2:
 		priority = queue.PriorityLow
+	default:
+		priority = queue.PriorityNormal
 	}
 
 	// Queue individual emails
