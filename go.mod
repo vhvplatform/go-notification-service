@@ -9,6 +9,7 @@ toolchain go1.24.11
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/google/uuid v1.6.0
+	github.com/vhvcorp/go-shared v0.0.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/robfig/cron/v3 v3.0.1
 	go.mongodb.org/mongo-driver v1.17.3
