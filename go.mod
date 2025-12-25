@@ -2,9 +2,9 @@
 // before this module can be built. Once published, run: go get github.com/vhvcorp/go-shared@latest
 module github.com/vhvcorp/go-notification-service
 
-go 1.24.0
+go 1.25
 
-toolchain go1.24.11
+toolchain go1.25.5
 
 require (
 	github.com/gin-gonic/gin v1.10.0

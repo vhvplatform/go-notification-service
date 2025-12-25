@@ -14,7 +14,7 @@
 
 ## Prerequisites
 
-- Go 1.24+
+- Go 1.25+
 - MongoDB 4.4+ (if applicable)
 - Redis 6.0+ (if applicable)
 - RabbitMQ 3.9+ (if applicable)
