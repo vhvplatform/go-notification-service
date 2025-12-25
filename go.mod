@@ -1,24 +1,6 @@
-
-// ============================================================================
-// MIGRATION NOTE: Multi-Repo Extraction
-// ============================================================================
-// When extracting this service to a separate repository:
-// 1. Update module path to: github.com/longvhv/saas-notification-service
-// 2. Replace local pkg dependency with: github.com/longvhv/saas-shared-go v0.1.0
-// 3. Remove all replace directives pointing to ../pkg
-// 4. Run: go mod tidy
-// 
-// Example transformation:
-//   Before: module github.com/longvhv/saas-notification-service
-//   After:  module github.com/longvhv/saas-notification-service
-//
-//   Before: replace github.com/longvhv/saas-framework-go/pkg => ../../pkg
-//   After:  (remove replace directive)
-//           require github.com/longvhv/saas-shared-go v0.1.0
-//
-// See: docs/migration/services/notification-service/EXTRACTION_GUIDE.md
-// ============================================================================
-module github.com/longvhv/saas-notification-service
+// Note: The github.com/vhvcorp/go-shared dependency needs to be published
+// before this module can be built. Once published, run: go get github.com/vhvcorp/go-shared@latest
+module github.com/vhvcorp/go-notification-service
 
 go 1.24.0
 
@@ -27,7 +9,7 @@ toolchain go1.24.11
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/google/uuid v1.6.0
-	github.com/longvhv/saas-framework-go/pkg v0.0.0
+	github.com/vhvcorp/go-shared v0.0.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/robfig/cron/v3 v3.0.1
 	go.mongodb.org/mongo-driver v1.17.3

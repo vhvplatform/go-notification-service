@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/longvhv/saas-shared-go/logger"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/repository"
-	smtppool "github.com/longvhv/saas-framework-go/services/notification-service/internal/smtp"
+	"github.com/vhvcorp/go-shared/logger"
+	"github.com/vhvcorp/go-notification-service/internal/domain"
+	"github.com/vhvcorp/go-notification-service/internal/repository"
+	smtppool "github.com/vhvcorp/go-notification-service/internal/smtp"
 )
 
 // EmailConfig holds email service configuration

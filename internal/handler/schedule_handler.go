@@ -6,11 +6,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/longvhv/saas-shared-go/errors"
-	"github.com/longvhv/saas-shared-go/logger"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/repository"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/scheduler"
+	"github.com/vhvcorp/go-shared/errors"
+	"github.com/vhvcorp/go-shared/logger"
+	"github.com/vhvcorp/go-notification-service/internal/domain"
+	"github.com/vhvcorp/go-notification-service/internal/repository"
+	"github.com/vhvcorp/go-notification-service/internal/scheduler"
 	"github.com/robfig/cron/v3"
 )
 

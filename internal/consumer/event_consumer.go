@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/longvhv/saas-shared-go/logger"
-	"github.com/longvhv/saas-shared-go/rabbitmq"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/service"
+	"github.com/vhvcorp/go-shared/logger"
+	"github.com/vhvcorp/go-shared/rabbitmq"
+	"github.com/vhvcorp/go-notification-service/internal/domain"
+	"github.com/vhvcorp/go-notification-service/internal/service"
 )
 
 const (
