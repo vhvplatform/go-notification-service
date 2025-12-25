@@ -7,7 +7,7 @@ import (
 
 	"github.com/vhvcorp/go-notification-service/internal/domain"
 	"github.com/vhvcorp/go-notification-service/internal/repository"
-	"github.com/vhvcorp/go-shared/logger"
+	"github.com/vhvcorp/go-notification-service/internal/shared/logger"
 )
 
 // SMSConfig holds SMS service configuration

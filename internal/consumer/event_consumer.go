@@ -7,8 +7,8 @@ import (
 
 	"github.com/vhvcorp/go-notification-service/internal/domain"
 	"github.com/vhvcorp/go-notification-service/internal/service"
-	"github.com/vhvcorp/go-shared/logger"
-	"github.com/vhvcorp/go-shared/rabbitmq"
+	"github.com/vhvcorp/go-notification-service/internal/shared/logger"
+	"github.com/vhvcorp/go-notification-service/internal/shared/rabbitmq"
 )
 
 const (
