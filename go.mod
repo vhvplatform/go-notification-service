@@ -1,3 +1,23 @@
+
+// ============================================================================
+// MIGRATION NOTE: Multi-Repo Extraction
+// ============================================================================
+// When extracting this service to a separate repository:
+// 1. Update module path to: github.com/longvhv/saas-notification-service
+// 2. Replace local pkg dependency with: github.com/longvhv/saas-shared-go v0.1.0
+// 3. Remove all replace directives pointing to ../pkg
+// 4. Run: go mod tidy
+// 
+// Example transformation:
+//   Before: module github.com/longvhv/saas-framework-go/services/notification-service
+//   After:  module github.com/longvhv/saas-notification-service
+//
+//   Before: replace github.com/longvhv/saas-framework-go/pkg => ../../pkg
+//   After:  (remove replace directive)
+//           require github.com/longvhv/saas-shared-go v0.1.0
+//
+// See: docs/migration/services/notification-service/EXTRACTION_GUIDE.md
+// ============================================================================
 module github.com/longvhv/saas-framework-go/services/notification-service
 
 go 1.24.0
