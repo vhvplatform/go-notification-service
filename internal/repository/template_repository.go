@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/vhvcorp/go-shared/mongodb"
 	"github.com/vhvcorp/go-notification-service/internal/domain"
+	"github.com/vhvcorp/go-shared/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )

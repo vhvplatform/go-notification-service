@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/vhvcorp/go-shared/logger"
 	"github.com/vhvcorp/go-notification-service/internal/domain"
 	"github.com/vhvcorp/go-notification-service/internal/repository"
 	smtppool "github.com/vhvcorp/go-notification-service/internal/smtp"
+	"github.com/vhvcorp/go-shared/logger"
 )
 
 // EmailConfig holds email service configuration
@@ -41,13 +41,13 @@ type EmailService struct {
 func NewEmailService(config EmailConfig, notifRepo *repository.NotificationRepository, templateRepo *repository.TemplateRepository, log *logger.Logger) *EmailService {
 	// Compile email validation regex
 	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-	
+
 	// Set default pool size if not specified
 	poolSize := config.PoolSize
 	if poolSize <= 0 {
 		poolSize = 10
 	}
-	
+
 	// Create SMTP pool
 	smtpConfig := smtppool.SMTPConfig{
 		Host:     config.SMTPHost,
@@ -56,12 +56,12 @@ func NewEmailService(config EmailConfig, notifRepo *repository.NotificationRepos
 		Password: config.SMTPPassword,
 		UseTLS:   config.SMTPPort == 465,
 	}
-	
+
 	smtpPool, err := smtppool.NewSMTPPool(smtpConfig, poolSize)
 	if err != nil {
 		log.Warn("Failed to create SMTP pool, will use direct connections", "error", err)
 	}
-	
+
 	return &EmailService{
 		config:       config,
 		notifRepo:    notifRepo,
@@ -132,7 +132,7 @@ func (s *EmailService) sendSMTPEmail(to, subject, body string, isHTML bool) erro
 	if s.smtpPool != nil {
 		return s.sendViaSMTPPool(to, subject, body, isHTML)
 	}
-	
+
 	// Fallback to direct connection
 	return s.sendViaDirect(to, subject, body, isHTML)
 }
@@ -145,12 +145,12 @@ func (s *EmailService) sendViaSMTPPool(to, subject, body string, isHTML bool) er
 		return s.sendViaDirect(to, subject, body, isHTML)
 	}
 	defer s.smtpPool.Put(client)
-	
+
 	from := s.config.FromEmail
 	if s.config.FromName != "" {
 		from = fmt.Sprintf("%s <%s>", s.config.FromName, s.config.FromEmail)
 	}
-	
+
 	// Build email message
 	var contentType string
 	if isHTML {
@@ -158,7 +158,7 @@ func (s *EmailService) sendViaSMTPPool(to, subject, body string, isHTML bool) er
 	} else {
 		contentType = "text/plain"
 	}
-	
+
 	message := fmt.Sprintf("From: %s\r\n"+
 		"To: %s\r\n"+
 		"Subject: %s\r\n"+
@@ -166,31 +166,31 @@ func (s *EmailService) sendViaSMTPPool(to, subject, body string, isHTML bool) er
 		"\r\n"+
 		"%s",
 		from, to, subject, contentType, body)
-	
+
 	// Send email using pooled connection
 	if err := client.Mail(s.config.FromEmail); err != nil {
 		return fmt.Errorf("failed to set sender: %w", err)
 	}
-	
+
 	if err := client.Rcpt(to); err != nil {
 		return fmt.Errorf("failed to set recipient: %w", err)
 	}
-	
+
 	w, err := client.Data()
 	if err != nil {
 		return fmt.Errorf("failed to get data writer: %w", err)
 	}
-	
+
 	_, err = w.Write([]byte(message))
 	if err != nil {
 		w.Close()
 		return fmt.Errorf("failed to write message: %w", err)
 	}
-	
+
 	if err := w.Close(); err != nil {
 		return fmt.Errorf("failed to close data writer: %w", err)
 	}
-	
+
 	return nil
 }
 

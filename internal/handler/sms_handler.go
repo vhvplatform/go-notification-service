@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vhvcorp/go-shared/errors"
-	"github.com/vhvcorp/go-shared/logger"
 	"github.com/vhvcorp/go-notification-service/internal/domain"
 	"github.com/vhvcorp/go-notification-service/internal/service"
+	"github.com/vhvcorp/go-shared/errors"
+	"github.com/vhvcorp/go-shared/logger"
 )
 
 // SMSHandler handles SMS notification requests

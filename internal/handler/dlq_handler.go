@@ -5,10 +5,10 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vhvcorp/go-shared/errors"
-	"github.com/vhvcorp/go-shared/logger"
 	"github.com/vhvcorp/go-notification-service/internal/dlq"
 	"github.com/vhvcorp/go-notification-service/internal/service"
+	"github.com/vhvcorp/go-shared/errors"
+	"github.com/vhvcorp/go-shared/logger"
 )
 
 // DLQHandler handles dead letter queue operations

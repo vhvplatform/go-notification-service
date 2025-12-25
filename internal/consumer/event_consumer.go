@@ -5,49 +5,49 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/vhvcorp/go-shared/logger"
-	"github.com/vhvcorp/go-shared/rabbitmq"
 	"github.com/vhvcorp/go-notification-service/internal/domain"
 	"github.com/vhvcorp/go-notification-service/internal/service"
+	"github.com/vhvcorp/go-shared/logger"
+	"github.com/vhvcorp/go-shared/rabbitmq"
 )
 
 const (
-	notificationExchange = "notifications"
-	notificationQueue    = "notification_queue"
+	notificationExchange   = "notifications"
+	notificationQueue      = "notification_queue"
 	notificationRoutingKey = "notification.*"
 )
 
 // EventConsumer consumes events from RabbitMQ
 type EventConsumer struct {
-	client         *rabbitmq.RabbitMQClient
-	service        *service.NotificationService
-	log            *logger.Logger
-	stopChan       chan struct{}
-	maxRetries     int
-	retryDelay     time.Duration
-	maxRetryDelay  time.Duration
+	client        *rabbitmq.RabbitMQClient
+	service       *service.NotificationService
+	log           *logger.Logger
+	stopChan      chan struct{}
+	maxRetries    int
+	retryDelay    time.Duration
+	maxRetryDelay time.Duration
 }
 
 // NewEventConsumer creates a new event consumer
 func NewEventConsumer(client *rabbitmq.RabbitMQClient, service *service.NotificationService, log *logger.Logger) *EventConsumer {
 	return &EventConsumer{
-		client:         client,
-		service:        service,
-		log:            log,
-		stopChan:       make(chan struct{}),
-		maxRetries:     5,
-		retryDelay:     1 * time.Second,
-		maxRetryDelay:  60 * time.Second,
+		client:        client,
+		service:       service,
+		log:           log,
+		stopChan:      make(chan struct{}),
+		maxRetries:    5,
+		retryDelay:    1 * time.Second,
+		maxRetryDelay: 60 * time.Second,
 	}
 }
 
 // Start starts consuming events from RabbitMQ with auto-restart
 func (c *EventConsumer) Start() error {
 	c.log.Info("Starting event consumer with auto-restart", "queue", notificationQueue)
-	
+
 	// Run consumer with exponential backoff retry
 	go c.runWithRetry()
-	
+
 	return nil
 }
 
@@ -60,7 +60,7 @@ func (c *EventConsumer) Stop() {
 func (c *EventConsumer) runWithRetry() {
 	retryCount := 0
 	currentDelay := c.retryDelay
-	
+
 	for {
 		select {
 		case <-c.stopChan:
@@ -71,10 +71,10 @@ func (c *EventConsumer) runWithRetry() {
 			if err != nil {
 				retryCount++
 				c.log.Error("Consumer failed, retrying", "error", err, "retry_count", retryCount, "delay", currentDelay)
-				
+
 				// Wait before retry
 				time.Sleep(currentDelay)
-				
+
 				// Calculate next delay with exponential backoff
 				currentDelay = currentDelay * 2
 				if currentDelay > c.maxRetryDelay {

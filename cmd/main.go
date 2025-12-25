@@ -11,10 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vhvcorp/go-shared/config"
-	"github.com/vhvcorp/go-shared/logger"
-	"github.com/vhvcorp/go-shared/mongodb"
-	"github.com/vhvcorp/go-shared/rabbitmq"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/vhvcorp/go-notification-service/internal/consumer"
 	"github.com/vhvcorp/go-notification-service/internal/dlq"
 	"github.com/vhvcorp/go-notification-service/internal/handler"
@@ -23,7 +20,10 @@ import (
 	"github.com/vhvcorp/go-notification-service/internal/scheduler"
 	"github.com/vhvcorp/go-notification-service/internal/service"
 	"github.com/vhvcorp/go-notification-service/internal/webhook"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/vhvcorp/go-shared/config"
+	"github.com/vhvcorp/go-shared/logger"
+	"github.com/vhvcorp/go-shared/mongodb"
+	"github.com/vhvcorp/go-shared/rabbitmq"
 )
 
 func main() {
