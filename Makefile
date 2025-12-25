@@ -4,7 +4,7 @@
 notification-service := notification-service
 DOCKER_REGISTRY ?= ghcr.io/vhvcorp
 VERSION ?= $(shell git describe --tags --always --dirty)
-GO_VERSION := 1.25
+GO_VERSION := 1.25.5
 
 help: ## Display this help screen
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

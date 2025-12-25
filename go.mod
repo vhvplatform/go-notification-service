@@ -1,8 +1,6 @@
 module github.com/vhvcorp/go-notification-service
 
-go 1.25
-
-toolchain go1.25.5
+go 1.25.5
 
 require (
 	github.com/gin-gonic/gin v1.11.0
