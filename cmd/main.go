@@ -19,11 +19,11 @@ import (
 	"github.com/vhvcorp/go-notification-service/internal/repository"
 	"github.com/vhvcorp/go-notification-service/internal/scheduler"
 	"github.com/vhvcorp/go-notification-service/internal/service"
-	"github.com/vhvcorp/go-notification-service/internal/webhook"
 	"github.com/vhvcorp/go-notification-service/internal/shared/config"
 	"github.com/vhvcorp/go-notification-service/internal/shared/logger"
 	"github.com/vhvcorp/go-notification-service/internal/shared/mongodb"
 	"github.com/vhvcorp/go-notification-service/internal/shared/rabbitmq"
+	"github.com/vhvcorp/go-notification-service/internal/webhook"
 )
 
 func main() {
