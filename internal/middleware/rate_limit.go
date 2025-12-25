@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/metrics"
+	"github.com/vhvcorp/go-notification-service/internal/metrics"
 	"golang.org/x/time/rate"
 )
 
@@ -52,12 +52,12 @@ func RateLimitMiddleware(rl *TenantRateLimiter) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Try to extract tenant_id from query parameter first (doesn't consume body)
 		tenantID := c.Query("tenant_id")
-		
+
 		// If not in query, try from form data
 		if tenantID == "" {
 			tenantID = c.PostForm("tenant_id")
 		}
-		
+
 		// If still empty, try from JSON body (use peek method to not consume)
 		if tenantID == "" {
 			var req struct {
@@ -68,7 +68,7 @@ func RateLimitMiddleware(rl *TenantRateLimiter) gin.HandlerFunc {
 				tenantID = req.TenantID
 			}
 		}
-		
+
 		// If still empty, allow through (will fail validation later)
 		if tenantID == "" {
 			c.Next()

@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/longvhv/saas-shared-go/logger"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/repository"
 	"github.com/robfig/cron/v3"
+	"github.com/vhvcorp/go-notification-service/internal/domain"
+	"github.com/vhvcorp/go-notification-service/internal/repository"
+	"github.com/vhvcorp/go-shared/logger"
 )
 
 // NotificationScheduler manages scheduled notifications

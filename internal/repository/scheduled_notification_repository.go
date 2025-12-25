@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/longvhv/saas-shared-go/mongodb"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
+	"github.com/vhvcorp/go-notification-service/internal/domain"
+	"github.com/vhvcorp/go-shared/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"

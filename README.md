@@ -1,4 +1,4 @@
-# saas-notification-service
+# go-notification-service
 
 > Part of the SaaS Framework - Extracted from monorepo
 
@@ -23,8 +23,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/longvhv/saas-notification-service.git
-cd saas-notification-service
+git clone https://github.com/vhvcorp/go-notification-service.git
+cd go-notification-service
 
 # Install dependencies
 go mod download
@@ -98,8 +98,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines.
 
 ## Related Repositories
 
-- [saas-shared-go](https://github.com/longvhv/saas-shared-go) - Shared Go libraries
-- [saas-framework-go](https://github.com/longvhv/saas-framework-go) - Original monorepo
+- [go-shared](https://github.com/vhvcorp/go-shared) - Shared Go libraries
 
 ## License
 
@@ -107,6 +106,6 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## Support
 
-- Documentation: [Wiki](https://github.com/longvhv/saas-notification-service/wiki)
-- Issues: [GitHub Issues](https://github.com/longvhv/saas-notification-service/issues)
-- Discussions: [GitHub Discussions](https://github.com/longvhv/saas-notification-service/discussions)
+- Documentation: [Wiki](https://github.com/vhvcorp/go-notification-service/wiki)
+- Issues: [GitHub Issues](https://github.com/vhvcorp/go-notification-service/issues)
+- Discussions: [GitHub Discussions](https://github.com/vhvcorp/go-notification-service/discussions)

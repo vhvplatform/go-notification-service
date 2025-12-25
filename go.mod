@@ -1,24 +1,6 @@
-
-// ============================================================================
-// MIGRATION NOTE: Multi-Repo Extraction
-// ============================================================================
-// When extracting this service to a separate repository:
-// 1. Update module path to: github.com/longvhv/saas-notification-service
-// 2. Replace local pkg dependency with: github.com/longvhv/saas-shared-go v0.1.0
-// 3. Remove all replace directives pointing to ../pkg
-// 4. Run: go mod tidy
-// 
-// Example transformation:
-//   Before: module github.com/longvhv/saas-notification-service
-//   After:  module github.com/longvhv/saas-notification-service
-//
-//   Before: replace github.com/longvhv/saas-framework-go/pkg => ../../pkg
-//   After:  (remove replace directive)
-//           require github.com/longvhv/saas-shared-go v0.1.0
-//
-// See: docs/migration/services/notification-service/EXTRACTION_GUIDE.md
-// ============================================================================
-module github.com/longvhv/saas-notification-service
+// Note: The github.com/vhvcorp/go-shared dependency needs to be published
+// before this module can be built. Once published, run: go get github.com/vhvcorp/go-shared@latest
+module github.com/vhvcorp/go-notification-service
 
 go 1.24.0
 
@@ -27,7 +9,7 @@ toolchain go1.24.11
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/google/uuid v1.6.0
-	github.com/longvhv/saas-framework-go/pkg v0.0.0
+	github.com/vhvcorp/go-shared v0.0.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/robfig/cron/v3 v3.0.1
 	go.mongodb.org/mongo-driver v1.17.3
@@ -41,13 +23,11 @@ require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.4 // indirect
 	github.com/cloudwego/iasm v0.2.0 // indirect
-	github.com/fsnotify/fsnotify v1.8.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
-	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -63,22 +43,12 @@ require (
 	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/common v0.66.1 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
-	github.com/rabbitmq/amqp091-go v1.10.0 // indirect
-	github.com/sagikazarmark/locafero v0.7.0 // indirect
-	github.com/sourcegraph/conc v0.3.0 // indirect
-	github.com/spf13/afero v1.12.0 // indirect
-	github.com/spf13/cast v1.7.1 // indirect
-	github.com/spf13/pflag v1.0.6 // indirect
-	github.com/spf13/viper v1.20.0 // indirect
-	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20240726163527-a2c0da244d78 // indirect
-	go.uber.org/multierr v1.11.0 // indirect
-	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.2 // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
@@ -89,4 +59,3 @@ require (
 	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-

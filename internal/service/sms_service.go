@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/longvhv/saas-shared-go/logger"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/repository"
+	"github.com/vhvcorp/go-notification-service/internal/domain"
+	"github.com/vhvcorp/go-notification-service/internal/repository"
+	"github.com/vhvcorp/go-shared/logger"
 )
 
 // SMSConfig holds SMS service configuration
@@ -81,24 +81,24 @@ func (s *SMSService) sendViaTwilio(req *domain.SendSMSRequest) error {
 	// Note: Actual Twilio integration would require the twilio-go SDK
 	// For now, this is a placeholder that logs the attempt
 	s.log.Info("Sending SMS via Twilio", "to", req.To, "provider", "twilio")
-	
+
 	// TODO: Implement actual Twilio integration when SDK is added
 	// This requires adding: github.com/twilio/twilio-go to dependencies
 	/*
-	client := twilio.NewRestClientWithParams(twilio.ClientParams{
-		Username: s.config.TwilioSID,
-		Password: s.config.TwilioToken,
-	})
-	
-	params := &twilioApi.CreateMessageParams{}
-	params.SetTo(req.To)
-	params.SetFrom(s.config.TwilioFrom)
-	params.SetBody(req.Message)
-	
-	_, err := client.Api.CreateMessage(params)
-	return err
+		client := twilio.NewRestClientWithParams(twilio.ClientParams{
+			Username: s.config.TwilioSID,
+			Password: s.config.TwilioToken,
+		})
+
+		params := &twilioApi.CreateMessageParams{}
+		params.SetTo(req.To)
+		params.SetFrom(s.config.TwilioFrom)
+		params.SetBody(req.Message)
+
+		_, err := client.Api.CreateMessage(params)
+		return err
 	*/
-	
+
 	return nil
 }
 
@@ -107,7 +107,7 @@ func (s *SMSService) sendViaAWSSNS(req *domain.SendSMSRequest) error {
 	// Note: Actual AWS SNS integration would require AWS SDK
 	// For now, this is a placeholder
 	s.log.Info("Sending SMS via AWS SNS", "to", req.To, "provider", "aws_sns")
-	
+
 	// TODO: Implement AWS SNS integration when SDK is needed
 	return fmt.Errorf("AWS SNS not implemented yet")
 }

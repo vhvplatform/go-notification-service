@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/longvhv/saas-shared-go/logger"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/repository"
+	"github.com/vhvcorp/go-notification-service/internal/domain"
+	"github.com/vhvcorp/go-notification-service/internal/repository"
+	"github.com/vhvcorp/go-shared/logger"
 )
 
 // Default maximum retry attempts before sending to DLQ

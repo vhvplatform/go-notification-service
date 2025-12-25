@@ -8,16 +8,16 @@ import (
 
 // ScheduledNotification represents a scheduled notification
 type ScheduledNotification struct {
-	ID         primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	TenantID   string             `json:"tenant_id" bson:"tenant_id"`
-	Type       NotificationType   `json:"type" bson:"type"` // email, sms, webhook
-	Schedule   string             `json:"schedule" bson:"schedule"` // cron expression
-	Request    interface{}        `json:"request" bson:"request"`
-	NextRunAt  time.Time          `json:"next_run_at" bson:"next_run_at"`
-	LastRunAt  *time.Time         `json:"last_run_at,omitempty" bson:"last_run_at,omitempty"`
-	IsActive   bool               `json:"is_active" bson:"is_active"`
-	CreatedAt  time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt  time.Time          `json:"updated_at" bson:"updated_at"`
+	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	TenantID  string             `json:"tenant_id" bson:"tenant_id"`
+	Type      NotificationType   `json:"type" bson:"type"`         // email, sms, webhook
+	Schedule  string             `json:"schedule" bson:"schedule"` // cron expression
+	Request   interface{}        `json:"request" bson:"request"`
+	NextRunAt time.Time          `json:"next_run_at" bson:"next_run_at"`
+	LastRunAt *time.Time         `json:"last_run_at,omitempty" bson:"last_run_at,omitempty"`
+	IsActive  bool               `json:"is_active" bson:"is_active"`
+	CreatedAt time.Time          `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time          `json:"updated_at" bson:"updated_at"`
 }
 
 // NotificationPreferences represents user notification preferences

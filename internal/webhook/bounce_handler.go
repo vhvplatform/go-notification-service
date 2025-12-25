@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/longvhv/saas-shared-go/logger"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/metrics"
-	"github.com/longvhv/saas-framework-go/services/notification-service/internal/repository"
+	"github.com/vhvcorp/go-notification-service/internal/domain"
+	"github.com/vhvcorp/go-notification-service/internal/metrics"
+	"github.com/vhvcorp/go-notification-service/internal/repository"
+	"github.com/vhvcorp/go-shared/logger"
 )
 
 // BounceHandler handles email bounce webhooks
@@ -19,11 +19,11 @@ type BounceHandler struct {
 
 // BounceEvent represents a bounce event from an email provider
 type BounceEvent struct {
-	Type      string    `json:"type"` // bounce, complaint
-	Email     string    `json:"email"`
-	Timestamp time.Time `json:"timestamp"`
-	Reason    string    `json:"reason"`
-	BounceType string   `json:"bounce_type"` // hard, soft
+	Type       string    `json:"type"` // bounce, complaint
+	Email      string    `json:"email"`
+	Timestamp  time.Time `json:"timestamp"`
+	Reason     string    `json:"reason"`
+	BounceType string    `json:"bounce_type"` // hard, soft
 }
 
 // NewBounceHandler creates a new bounce handler
