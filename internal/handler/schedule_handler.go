@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/longvhv/saas-framework-go/pkg/errors"
-	"github.com/longvhv/saas-framework-go/pkg/logger"
+	"github.com/longvhv/saas-shared-go/errors"
+	"github.com/longvhv/saas-shared-go/logger"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/repository"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/scheduler"

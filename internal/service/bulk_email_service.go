@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/longvhv/saas-framework-go/pkg/logger"
+	"github.com/longvhv/saas-shared-go/logger"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/metrics"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/queue"

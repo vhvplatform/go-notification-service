@@ -9,7 +9,7 @@
 // 4. Run: go mod tidy
 // 
 // Example transformation:
-//   Before: module github.com/longvhv/saas-framework-go/services/notification-service
+//   Before: module github.com/longvhv/saas-notification-service
 //   After:  module github.com/longvhv/saas-notification-service
 //
 //   Before: replace github.com/longvhv/saas-framework-go/pkg => ../../pkg
@@ -18,7 +18,7 @@
 //
 // See: docs/migration/services/notification-service/EXTRACTION_GUIDE.md
 // ============================================================================
-module github.com/longvhv/saas-framework-go/services/notification-service
+module github.com/longvhv/saas-notification-service
 
 go 1.24.0
 
@@ -90,4 +90,3 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/longvhv/saas-framework-go/pkg => ../../pkg

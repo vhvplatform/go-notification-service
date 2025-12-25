@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/longvhv/saas-framework-go/pkg/logger"
-	"github.com/longvhv/saas-framework-go/pkg/rabbitmq"
+	"github.com/longvhv/saas-shared-go/logger"
+	"github.com/longvhv/saas-shared-go/rabbitmq"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/domain"
 	"github.com/longvhv/saas-framework-go/services/notification-service/internal/service"
 )
