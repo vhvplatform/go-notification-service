@@ -1,0 +1,189 @@
+@startuml provider-integration
+!theme plain
+title Provider Integration Architecture
+
+package "Notification Service" {
+    interface "Channel Service" as IChannel
+    
+    package "Email Channel" {
+        class EmailService {
+            +Send(email)
+            +SendBulk(emails[])
+        }
+        
+        interface "Email Provider" as IEmailProvider {
+            +Send(email)
+            +ValidateConfig()
+        }
+        
+        class SMTPProvider {
+            -host: string
+            -port: int
+            -pool: SMTPPool
+            +Send(email)
+        }
+        
+        class SendGridProvider {
+            -apiKey: string
+            -client: HTTPClient
+            +Send(email)
+        }
+        
+        class SESProvider {
+            -region: string
+            -credentials: AWSCredentials
+            +Send(email)
+        }
+    }
+    
+    package "SMS Channel" {
+        class SMSService {
+            +Send(sms)
+        }
+        
+        interface "SMS Provider" as ISMSProvider {
+            +Send(sms)
+            +ValidateConfig()
+        }
+        
+        class TwilioProvider {
+            -accountSID: string
+            -authToken: string
+            -fromNumber: string
+            +Send(sms)
+        }
+        
+        class SNSProvider {
+            -region: string
+            -credentials: AWSCredentials
+            +Send(sms)
+        }
+    }
+    
+    package "Push Channel" {
+        class PushService {
+            +Send(push)
+        }
+        
+        interface "Push Provider" as IPushProvider {
+            +Send(push)
+            +ValidateConfig()
+        }
+        
+        class FCMProvider {
+            -serverKey: string
+            -client: HTTPClient
+            +Send(push)
+        }
+        
+        class APNsProvider {
+            -certificate: string
+            -keyID: string
+            +Send(push)
+        }
+    }
+    
+    package "Webhook Channel" {
+        class WebhookService {
+            +Send(webhook)
+        }
+        
+        class HTTPClient {
+            -timeout: Duration
+            -retries: int
+            +Post(url, data)
+        }
+    }
+    
+    class "Provider Factory" as Factory {
+        +CreateEmailProvider(config): IEmailProvider
+        +CreateSMSProvider(config): ISMSProvider
+        +CreatePushProvider(config): IPushProvider
+    }
+    
+    class "Circuit Breaker" as CircuitBreaker {
+        -state: State
+        -failureThreshold: int
+        -resetTimeout: Duration
+        +Call(func)
+    }
+}
+
+cloud "External Providers" {
+    [SMTP Server]
+    [SendGrid API]
+    [AWS SES]
+    [Twilio API]
+    [AWS SNS]
+    [FCM]
+    [APNs]
+    [Webhook Endpoints]
+}
+
+' Relationships
+IChannel <|.. EmailService
+IChannel <|.. SMSService
+IChannel <|.. PushService
+IChannel <|.. WebhookService
+
+IEmailProvider <|.. SMTPProvider
+IEmailProvider <|.. SendGridProvider
+IEmailProvider <|.. SESProvider
+
+ISMSProvider <|.. TwilioProvider
+ISMSProvider <|.. SNSProvider
+
+IPushProvider <|.. FCMProvider
+IPushProvider <|.. APNsProvider
+
+EmailService --> Factory: Create provider
+SMSService --> Factory: Create provider
+PushService --> Factory: Create provider
+
+Factory --> IEmailProvider: Creates
+Factory --> ISMSProvider: Creates
+Factory --> IPushProvider: Creates
+
+EmailService --> CircuitBreaker: Wrap calls
+SMSService --> CircuitBreaker: Wrap calls
+PushService --> CircuitBreaker: Wrap calls
+WebhookService --> CircuitBreaker: Wrap calls
+
+SMTPProvider --> [SMTP Server]: Send
+SendGridProvider --> [SendGrid API]: Send
+SESProvider --> [AWS SES]: Send
+
+TwilioProvider --> [Twilio API]: Send
+SNSProvider --> [AWS SNS]: Send
+
+FCMProvider --> [FCM]: Send
+APNsProvider --> [APNs]: Send
+
+WebhookService --> HTTPClient
+HTTPClient --> [Webhook Endpoints]: POST
+
+note right of Factory
+  Factory Pattern:
+  - Creates providers based on config
+  - Validates provider credentials
+  - Handles provider-specific setup
+  - Enables easy provider switching
+end note
+
+note right of CircuitBreaker
+  Circuit Breaker Protection:
+  - Prevents cascading failures
+  - Fast-fail on provider issues
+  - Auto-recovery after timeout
+  - Per-provider state tracking
+end note
+
+note bottom of IEmailProvider
+  Provider Interface Benefits:
+  - Easy to add new providers
+  - Consistent error handling
+  - Simplified testing with mocks
+  - Provider hot-swapping
+end note
+
+@enduml

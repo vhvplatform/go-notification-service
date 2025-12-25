@@ -12,8 +12,8 @@ import (
 
 	"github.com/vhvcorp/go-notification-service/internal/domain"
 	"github.com/vhvcorp/go-notification-service/internal/repository"
+	"github.com/vhvcorp/go-notification-service/internal/shared/logger"
 	smtppool "github.com/vhvcorp/go-notification-service/internal/smtp"
-	"github.com/vhvcorp/go-shared/logger"
 )
 
 // EmailConfig holds email service configuration
