@@ -1,0 +1,129 @@
+@startuml notification-architecture
+!theme plain
+title Notification Service - Multi-Channel Architecture
+
+skinparam componentStyle rectangle
+
+package "Notification Service" {
+    [HTTP API] as HTTP
+    [Event Consumer] as Consumer
+    [Notification Handler] as Handler
+    [Scheduler] as Scheduler
+    
+    package "Services" {
+        [Notification Service] as NotifService
+        [Email Service] as Email
+        [SMS Service] as SMS
+        [Webhook Service] as Webhook
+        [Bulk Email Service] as Bulk
+    }
+    
+    package "Repositories" {
+        [Notification Repository] as NotifRepo
+        [Template Repository] as TemplateRepo
+        [Failed Notification Repository] as FailedRepo
+        [Scheduled Repository] as ScheduledRepo
+        [Preferences Repository] as PrefRepo
+        [Bounce Repository] as BounceRepo
+    }
+    
+    package "Infrastructure" {
+        [Dead Letter Queue] as DLQ
+        [Rate Limiter] as RateLimit
+        [SMTP Pool] as SMTPPool
+        [Metrics] as Metrics
+    }
+}
+
+package "External Systems" {
+    database "MongoDB" as MongoDB {
+        [notifications]
+        [templates]
+        [failed_notifications]
+        [scheduled_notifications]
+        [preferences]
+        [bounces]
+    }
+    
+    queue "RabbitMQ" as RabbitMQ {
+        [notification_queue]
+    }
+    
+    cloud "Email Providers" {
+        [SMTP Server]
+        [SendGrid]
+        [AWS SES]
+    }
+    
+    cloud "SMS Providers" {
+        [Twilio]
+        [AWS SNS]
+    }
+    
+    cloud "External Services" {
+        [Webhook Endpoints]
+    }
+}
+
+' Connections
+HTTP --> Handler
+Consumer --> NotifService
+Scheduler --> NotifService
+Handler --> NotifService
+Handler --> RateLimit
+
+NotifService --> Email
+NotifService --> SMS
+NotifService --> Webhook
+NotifService --> Bulk
+
+Email --> SMTPPool
+Email --> NotifRepo
+Email --> TemplateRepo
+Email --> DLQ
+
+SMS --> NotifRepo
+SMS --> DLQ
+
+Webhook --> NotifRepo
+Webhook --> DLQ
+
+Bulk --> Email
+
+NotifRepo --> MongoDB
+TemplateRepo --> MongoDB
+FailedRepo --> MongoDB
+ScheduledRepo --> MongoDB
+PrefRepo --> MongoDB
+BounceRepo --> MongoDB
+
+DLQ --> FailedRepo
+
+Consumer --> RabbitMQ
+SMTPPool --> [SMTP Server]
+Email --> [SendGrid]
+Email --> [AWS SES]
+
+SMS --> [Twilio]
+SMS --> [AWS SNS]
+
+Webhook --> [Webhook Endpoints]
+
+NotifService --> Metrics
+
+note right of NotifService
+  Central orchestrator for
+  multi-channel notifications
+end note
+
+note right of DLQ
+  Handles failed notifications
+  with retry mechanism
+end note
+
+note right of RateLimit
+  Per-tenant rate limiting
+  to prevent abuse
+end note
+
+@enduml

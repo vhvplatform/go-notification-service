@@ -1,0 +1,97 @@
+@startuml multi-channel-routing
+!theme plain
+title Multi-Channel Routing Logic
+
+start
+
+:Receive notification request;
+
+:Extract tenant_id and type;
+
+:Check user preferences;
+
+if (Preferences allow notification?) then (yes)
+    
+    :Determine notification channel;
+    
+    if (Channel type?) then (EMAIL)
+        :Route to Email Service;
+        
+        if (Has template_id?) then (yes)
+            :Fetch email template;
+            :Render template with variables;
+        else (no)
+            :Use raw content;
+        endif
+        
+        :Check SMTP pool availability;
+        
+        if (Pool available?) then (yes)
+            :Get SMTP connection from pool;
+            :Send email via SMTP;
+            :Return connection to pool;
+        else (no)
+            :Add to email queue;
+        endif
+        
+    elseif (Channel type?) then (SMS)
+        :Route to SMS Service;
+        
+        if (SMS provider?) then (Twilio)
+            :Send via Twilio API;
+        elseif (SMS provider?) then (AWS SNS)
+            :Send via AWS SNS;
+        else (Other)
+            :Send via configured provider;
+        endif
+        
+    elseif (Channel type?) then (WEBHOOK)
+        :Route to Webhook Service;
+        
+        :Prepare webhook payload;
+        
+        :Send HTTP POST to webhook URL;
+        
+        if (Response timeout?) then (yes)
+            :Mark as failed;
+            :Add to DLQ;
+        else (no)
+            :Mark as sent;
+        endif
+        
+    else (PUSH)
+        :Route to Push Service;
+        note right
+            Future implementation:
+            - FCM for Android
+            - APNs for iOS
+        end note
+    endif
+    
+    :Update notification status;
+    :Record metrics;
+    
+    if (Send successful?) then (yes)
+        :Return success response;
+    else (no)
+        :Add to Dead Letter Queue;
+        :Schedule retry with backoff;
+        :Return error response;
+    endif
+    
+else (no)
+    :Log blocked notification;
+    :Return blocked response;
+endif
+
+stop
+
+note right
+  Each channel has its own:
+  - Rate limiting
+  - Connection pooling
+  - Retry mechanism
+  - Error handling
+end note
+
+@enduml

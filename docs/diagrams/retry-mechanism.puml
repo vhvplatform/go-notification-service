@@ -1,0 +1,77 @@
+@startuml retry-mechanism
+!theme plain
+title Failed Notification Retry Strategy
+
+start
+
+:Notification send attempt fails;
+
+:Create failed notification record;
+
+:Calculate retry delay;
+note right
+  Exponential backoff:
+  - Attempt 1: 1 second
+  - Attempt 2: 2 seconds
+  - Attempt 3: 4 seconds
+  - Attempt 4: 8 seconds
+  - Attempt 5: 16 seconds
+  - Max: 60 seconds
+end note
+
+:Add to Dead Letter Queue (DLQ);
+
+:Schedule retry with cron;
+
+repeat
+    :Wait for retry delay;
+    
+    :Retrieve from DLQ;
+    
+    :Check retry count;
+    
+    if (Retry count < max retries?) then (yes)
+        :Increment retry count;
+        
+        :Attempt to resend;
+        
+        if (Send successful?) then (yes)
+            :Update status to SENT;
+            :Remove from DLQ;
+            :Record success metrics;
+            stop
+        else (no)
+            :Update failure reason;
+            :Calculate next retry delay;
+            note right
+              Exponential backoff
+              formula:
+              delay = min(
+                initialDelay * 2^retryCount,
+                maxDelay
+              )
+            end note
+        endif
+    else (no - max retries exceeded)
+        :Mark as PERMANENTLY_FAILED;
+        :Move to permanent failure storage;
+        :Send alert to monitoring;
+        :Record failure metrics;
+        stop
+    endif
+    
+repeat while (Still in DLQ?) is (yes)
+
+stop
+
+note bottom
+  DLQ Features:
+  - Automatic retry scheduling
+  - Exponential backoff
+  - Max retry limit (default: 5)
+  - Permanent failure handling
+  - Manual retry API endpoint
+  - Monitoring and alerting
+end note
+
+@enduml

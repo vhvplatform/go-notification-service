@@ -1,0 +1,140 @@
+@startuml queue-architecture
+!theme plain
+title Message Queue Architecture
+
+skinparam componentStyle rectangle
+
+package "Event Publishers" {
+    [User Service] as UserSvc
+    [Auth Service] as AuthSvc
+    [Other Services] as OtherSvc
+}
+
+package "RabbitMQ Exchange" {
+    component "notifications\n(topic exchange)" as Exchange {
+        [notification.email]
+        [notification.sms]
+        [notification.webhook]
+        [notification.*]
+    }
+}
+
+package "Notification Service" {
+    queue "Notification Queue\n(durable)" as MainQueue
+    
+    component "Event Consumer" {
+        [Consumer 1]
+        [Consumer 2]
+        [Consumer N]
+    }
+    
+    [Notification Service] as NotifSvc
+    
+    component "Priority Queue\n(in-memory)" as PriorityQ {
+        queue "High Priority" as HighPQ
+        queue "Normal Priority" as NormalPQ
+        queue "Low Priority" as LowPQ
+    }
+    
+    component "Worker Pool" as Workers {
+        [Email Worker 1]
+        [Email Worker 2]
+        [Email Worker N]
+    }
+    
+    queue "Dead Letter Queue\n(persistent)" as DLQ
+    
+    [Retry Scheduler] as Scheduler
+}
+
+package "Delivery Channels" {
+    [Email Service] as Email
+    [SMS Service] as SMS
+    [Webhook Service] as Webhook
+}
+
+' Publishers to Exchange
+UserSvc --> Exchange: Publish events
+AuthSvc --> Exchange: Publish events
+OtherSvc --> Exchange: Publish events
+
+' Exchange to Queue
+Exchange --> MainQueue: Route by pattern
+
+' Queue to Consumers
+MainQueue --> [Consumer 1]: Consume
+MainQueue --> [Consumer 2]: Consume
+MainQueue --> [Consumer N]: Consume
+
+' Consumers to Service
+[Consumer 1] --> NotifSvc
+[Consumer 2] --> NotifSvc
+[Consumer N] --> NotifSvc
+
+' Service to Priority Queue
+NotifSvc --> HighPQ: High priority
+NotifSvc --> NormalPQ: Normal priority
+NotifSvc --> LowPQ: Low priority
+
+' Priority Queue to Workers
+HighPQ --> Workers: Process first
+NormalPQ --> Workers: Process second
+LowPQ --> Workers: Process last
+
+' Workers to Channels
+Workers --> Email
+Workers --> SMS
+Workers --> Webhook
+
+' Failed messages to DLQ
+Email --> DLQ: On failure
+SMS --> DLQ: On failure
+Webhook --> DLQ: On failure
+
+' DLQ to Scheduler
+DLQ --> Scheduler: Retry schedule
+
+' Scheduler back to Service
+Scheduler --> NotifSvc: Retry notification
+
+note right of MainQueue
+  Queue Features:
+  - Durable (survives restarts)
+  - Message persistence
+  - Acknowledgement mode
+  - Prefetch limit: 10
+  - Auto-reconnect
+end note
+
+note right of PriorityQ
+  In-memory priority queue:
+  - High: SLA alerts, security
+  - Normal: User notifications
+  - Low: Marketing, bulk
+end note
+
+note right of Workers
+  Worker Pool:
+  - Configurable size
+  - Goroutine-based
+  - Graceful shutdown
+  - Connection pooling
+end note
+
+note right of DLQ
+  Failed Message Handling:
+  - Exponential backoff
+  - Max retries: 5
+  - Permanent failure storage
+  - Manual retry endpoint
+end note
+
+note right of Exchange
+  Topic Exchange Patterns:
+  - notification.email.*
+  - notification.sms.*
+  - notification.webhook.*
+  - notification.push.*
+end note
+
+@enduml
