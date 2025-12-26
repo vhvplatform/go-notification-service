@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"net/http"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,6 +17,17 @@ const (
 
 	// TenantIDHeader is the HTTP header name for tenant ID
 	TenantIDHeader = "X-Tenant-ID"
+
+	// AuditTenantIDKey is the key for audit logging
+	AuditTenantIDKey = "audit_tenant_id"
+
+	// tenantIDPattern defines allowed characters for tenant IDs
+	tenantIDPattern = `^[a-zA-Z0-9_-]+$`
+)
+
+var (
+	// tenantIDRegex is the compiled regex for tenant ID validation
+	tenantIDRegex = regexp.MustCompile(tenantIDPattern)
 )
 
 // TenancyMiddleware extracts the X-Tenant-ID header and validates tenant isolation
@@ -48,6 +60,17 @@ func TenancyMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Validate tenant ID contains only allowed characters
+		if !tenantIDRegex.MatchString(tenantID) {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error":   "Invalid tenant identifier format",
+				"message": "X-Tenant-ID must contain only alphanumeric characters, hyphens, and underscores",
+				"code":    "INVALID_TENANT_ID_FORMAT",
+			})
+			c.Abort()
+			return
+		}
+
 		// Store tenant ID in Gin context
 		c.Set(string(TenantIDKey), tenantID)
 
@@ -56,7 +79,7 @@ func TenancyMiddleware() gin.HandlerFunc {
 		c.Request = c.Request.WithContext(ctx)
 
 		// Log tenant ID for audit trail
-		c.Set("audit_tenant_id", tenantID)
+		c.Set(AuditTenantIDKey, tenantID)
 
 		// Continue to next handler
 		c.Next()
@@ -86,11 +109,29 @@ func GetTenantIDFromContext(ctx context.Context) string {
 }
 
 // MustGetTenantID retrieves tenant ID from context and panics if not found
-// Use this in handlers where tenant ID is guaranteed to exist due to middleware
+// IMPORTANT: Only use this in handlers where TenancyMiddleware is guaranteed to be applied.
+// This is a programming error if tenant ID is missing at this point, not a runtime error.
+// For optional tenant ID retrieval, use GetTenantID() instead.
 func MustGetTenantID(c *gin.Context) string {
 	tenantID := GetTenantID(c)
 	if tenantID == "" {
-		panic("tenant ID not found in context - ensure TenancyMiddleware is applied")
+		// This panic indicates a middleware configuration error, not a user error
+		panic("tenant ID not found in context - ensure TenancyMiddleware is applied to this route")
 	}
 	return tenantID
+}
+
+// GetTenantIDOrError retrieves tenant ID from context or returns an HTTP error
+// Use this when you want graceful error handling instead of panicking
+func GetTenantIDOrError(c *gin.Context) (string, bool) {
+	tenantID := GetTenantID(c)
+	if tenantID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Missing tenant context",
+			"message": "Tenant ID not found in request context",
+			"code":    "TENANT_CONTEXT_MISSING",
+		})
+		return "", false
+	}
+	return tenantID, true
 }
