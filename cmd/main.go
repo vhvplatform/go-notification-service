@@ -140,8 +140,9 @@ func main() {
 	// Metrics endpoint
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// API routes with rate limiting
+	// API routes with tenancy and rate limiting
 	v1 := router.Group("/api/v1")
+	v1.Use(middleware.TenancyMiddleware())
 	v1.Use(middleware.RateLimitMiddleware(rateLimiter))
 	{
 		// Notifications

@@ -52,14 +52,14 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl set image deployment/${{ github.event.repository.name }} \
-            ${{ github.event.repository.name }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev \
-            -n saas-framework-dev
-          kubectl rollout status deployment/${{ github.event.repository.name }} -n saas-framework-dev
+          kubectl set image deployment/go-notification-service \
+            go-notification-service=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:dev \
+            -n shared-services
+          kubectl rollout status deployment/go-notification-service -n shared-services
 
       - name: Verify deployment
         run: |
-          kubectl get pods -n saas-framework-dev -l app=${{ github.event.repository.name }}
+          kubectl get pods -n shared-services -l app=go-notification-service
 
       - name: Notify Slack
         uses: 8398a7/action-slack@v3

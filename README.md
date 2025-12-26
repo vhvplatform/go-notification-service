@@ -15,6 +15,7 @@ A robust, scalable notification service built in Go that provides unified API fo
 - **Webhooks**: Custom HTTP endpoints
 
 ### Core Capabilities
+- **Multi-Tenancy**: Full tenant isolation with X-Tenant-ID header support
 - **Template Management**: Reusable templates with variable substitution
 - **Delivery Tracking**: Real-time status tracking and history
 - **Retry Mechanism**: Automatic retry with exponential backoff
@@ -126,11 +127,18 @@ See [DEPENDENCIES.md](docs/DEPENDENCIES.md) for a complete list of environment v
 
 ## Usage
 
+### Multi-Tenant Architecture
+
+This service implements a multi-tenant architecture aligned with the [go-infrastructure](https://github.com/vhvplatform/go-infrastructure) standards. All API requests must include the `X-Tenant-ID` header for tenant isolation.
+
+**Important**: The `X-Tenant-ID` header is mandatory for all `/api/v1/*` endpoints. Requests without this header will receive a 400 Bad Request response.
+
 ### Send Email Notification
 
 ```bash
 curl -X POST http://localhost:8084/api/v1/notifications/email \
   -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: tenant123" \
   -d '{
     "tenant_id": "tenant123",
     "to": "user@example.com",
@@ -149,6 +157,7 @@ curl -X POST http://localhost:8084/api/v1/notifications/email \
 ```bash
 curl -X POST http://localhost:8084/api/v1/notifications/sms \
   -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: tenant123" \
   -d '{
     "tenant_id": "tenant123",
     "to": "+14155552671",
@@ -161,6 +170,7 @@ curl -X POST http://localhost:8084/api/v1/notifications/sms \
 ```bash
 curl -X POST http://localhost:8084/api/v1/notifications/webhook \
   -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: tenant123" \
   -d '{
     "tenant_id": "tenant123",
     "url": "https://example.com/webhook",
@@ -177,6 +187,7 @@ curl -X POST http://localhost:8084/api/v1/notifications/webhook \
 ```bash
 curl -X POST http://localhost:8084/api/v1/notifications/bulk/email \
   -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: tenant123" \
   -d '{
     "tenant_id": "tenant123",
     "template_id": "newsletter",
@@ -192,6 +203,7 @@ curl -X POST http://localhost:8084/api/v1/notifications/bulk/email \
 ```bash
 curl -X POST http://localhost:8084/api/v1/scheduled \
   -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: tenant123" \
   -d '{
     "tenant_id": "tenant123",
     "schedule": "0 9 * * *",
@@ -207,18 +219,19 @@ curl -X POST http://localhost:8084/api/v1/scheduled \
 ### Get Notification History
 
 ```bash
-curl "http://localhost:8084/api/v1/notifications?tenant_id=tenant123&page=1&page_size=20"
+curl -H "X-Tenant-ID: tenant123" "http://localhost:8084/api/v1/notifications?tenant_id=tenant123&page=1&page_size=20"
 ```
 
 ### Manage User Preferences
 
 ```bash
 # Get preferences
-curl "http://localhost:8084/api/v1/preferences/user123"
+curl -H "X-Tenant-ID: tenant123" "http://localhost:8084/api/v1/preferences/user123"
 
 # Update preferences
 curl -X PUT http://localhost:8084/api/v1/preferences/user123 \
   -H "Content-Type: application/json" \
+  -H "X-Tenant-ID: tenant123" \
   -d '{
     "email_enabled": true,
     "sms_enabled": false,
@@ -234,10 +247,10 @@ curl -X PUT http://localhost:8084/api/v1/preferences/user123 \
 
 ```bash
 # Get failed notifications
-curl "http://localhost:8084/api/v1/dlq"
+curl -H "X-Tenant-ID: tenant123" "http://localhost:8084/api/v1/dlq"
 
 # Retry failed notification
-curl -X POST "http://localhost:8084/api/v1/dlq/notification123/retry"
+curl -X POST -H "X-Tenant-ID: tenant123" "http://localhost:8084/api/v1/dlq/notification123/retry"
 ```
 
 ## Development
@@ -522,6 +535,7 @@ See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for detailed troubleshooting g
 
 ## Related Repositories
 
+- [go-infrastructure](https://github.com/vhvplatform/go-infrastructure) - Infrastructure as Code and architectural standards
 - [go-shared](https://github.com/vhvplatform/go-shared) - Shared Go libraries (deprecated, now using internal/shared)
 
 ## Changelog

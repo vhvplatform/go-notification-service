@@ -79,16 +79,16 @@ jobs:
       
       - name: Deploy to Kubernetes
         run: |
-          kubectl set image deployment/${{ github.event.repository.name }} \
-            ${{ github.event.repository.name }}=${{ needs.build.outputs.image-tag }} \
-            -n saas-framework-staging
+          kubectl set image deployment/go-notification-service \
+            go-notification-service=${{ needs.build.outputs.image-tag }} \
+            -n shared-services
           
-          kubectl rollout status deployment/${{ github.event.repository.name }} \
-            -n saas-framework-staging
+          kubectl rollout status deployment/go-notification-service \
+            -n shared-services
       
       - name: Verify deployment
         run: |
-          kubectl get pods -n saas-framework-staging -l app=${{ github.event.repository.name }}
+          kubectl get pods -n shared-services -l app=go-notification-service
   
   deploy-production:
     name: Deploy to Production
@@ -114,16 +114,16 @@ jobs:
       
       - name: Deploy to Kubernetes
         run: |
-          kubectl set image deployment/${{ github.event.repository.name }} \
-            ${{ github.event.repository.name }}=${{ needs.build.outputs.image-tag }} \
-            -n saas-framework-production
+          kubectl set image deployment/go-notification-service \
+            go-notification-service=${{ needs.build.outputs.image-tag }} \
+            -n shared-services
           
-          kubectl rollout status deployment/${{ github.event.repository.name }} \
-            -n saas-framework-production
+          kubectl rollout status deployment/go-notification-service \
+            -n shared-services
       
       - name: Verify deployment
         run: |
-          kubectl get pods -n saas-framework-production -l app=${{ github.event.repository.name }}
+          kubectl get pods -n shared-services -l app=go-notification-service
       
       - name: Run smoke tests
         run: |

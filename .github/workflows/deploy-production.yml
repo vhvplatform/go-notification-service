@@ -49,18 +49,18 @@ jobs:
       - name: Blue-Green Deployment
         run: |
           # Deploy to green environment
-          kubectl set image deployment/${{ github.event.repository.name }}-green \
-            ${{ github.event.repository.name }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }} \
-            -n saas-framework-prod
+          kubectl set image deployment/go-notification-service-green \
+            go-notification-service=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }} \
+            -n shared-services
 
           # Wait for rollout
-          kubectl rollout status deployment/${{ github.event.repository.name }}-green -n saas-framework-prod
+          kubectl rollout status deployment/go-notification-service-green -n shared-services
 
           # Run health checks
           sleep 30
 
           # Switch traffic to green
-          kubectl patch service ${{ github.event.repository.name }} -n saas-framework-prod \
+          kubectl patch service go-notification-service -n shared-services \
             -p '{"spec":{"selector":{"version":"green"}}}'
 
           # Keep blue for rollback
@@ -92,5 +92,5 @@ jobs:
         if: failure()
         run: |
           echo "Rollback command:" > rollback.sh
-          echo "kubectl patch service ${{ github.event.repository.name }} -n saas-framework-prod -p '{\"spec\":{\"selector\":{\"version\":\"blue\"}}}'" >> rollback.sh
+          echo "kubectl patch service go-notification-service -n shared-services -p '{\"spec\":{\"selector\":{\"version\":\"blue\"}}}'" >> rollback.sh
           chmod +x rollback.sh
