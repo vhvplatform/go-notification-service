@@ -35,10 +35,10 @@ jobs:
 
       - name: Deploy to Kubernetes
         run: |
-          kubectl set image deployment/${{ github.event.repository.name }} \
-            ${{ github.event.repository.name }}=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }} \
-            -n saas-framework-staging
-          kubectl rollout status deployment/${{ github.event.repository.name }} -n saas-framework-staging
+          kubectl set image deployment/go-notification-service \
+            go-notification-service=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.version }} \
+            -n shared-services
+          kubectl rollout status deployment/go-notification-service -n shared-services
 
       - name: Run smoke tests
         run: |
