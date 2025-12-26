@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"github.com/vhvcorp/go-notification-service/internal/metrics"
+	"github.com/vhvplatform/go-notification-service/internal/metrics"
 	"golang.org/x/time/rate"
 )
 

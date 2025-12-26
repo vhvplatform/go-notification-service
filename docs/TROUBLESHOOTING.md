@@ -680,9 +680,9 @@ curl http://localhost:8084/ready
 
 ### Support Channels
 
-- GitHub Issues: https://github.com/vhvcorp/go-notification-service/issues
-- Documentation: https://github.com/vhvcorp/go-notification-service/wiki
-- Email: support@vhvcorp.com
+- GitHub Issues: https://github.com/vhvplatform/go-notification-service/issues
+- Documentation: https://github.com/vhvplatform/go-notification-service/wiki
+- Email: support@vhvplatform.com
 
 ### Reporting Bugs
 

@@ -1,4 +1,4 @@
-module github.com/vhvcorp/go-notification-service
+module github.com/vhvplatform/go-notification-service
 
 go 1.25.5
 

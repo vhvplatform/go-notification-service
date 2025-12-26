@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"github.com/vhvcorp/go-notification-service/internal/domain"
-	"github.com/vhvcorp/go-notification-service/internal/repository"
-	"github.com/vhvcorp/go-notification-service/internal/shared/logger"
+	"github.com/vhvplatform/go-notification-service/internal/domain"
+	"github.com/vhvplatform/go-notification-service/internal/repository"
+	"github.com/vhvplatform/go-notification-service/internal/shared/logger"
 )
 
 // NotificationScheduler manages scheduled notifications

@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"github.com/vhvcorp/go-notification-service/internal/repository"
+	"github.com/vhvplatform/go-notification-service/internal/repository"
 )
 
 // BounceChecker checks if emails have bounced

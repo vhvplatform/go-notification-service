@@ -4,7 +4,7 @@ import (
 	"container/heap"
 	"sync"
 
-	"github.com/vhvcorp/go-notification-service/internal/domain"
+	"github.com/vhvplatform/go-notification-service/internal/domain"
 )
 
 // Priority represents the priority level of an email job

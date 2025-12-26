@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vhvcorp/go-notification-service/internal/domain"
-	"github.com/vhvcorp/go-notification-service/internal/metrics"
-	"github.com/vhvcorp/go-notification-service/internal/repository"
-	"github.com/vhvcorp/go-notification-service/internal/shared/logger"
+	"github.com/vhvplatform/go-notification-service/internal/domain"
+	"github.com/vhvplatform/go-notification-service/internal/metrics"
+	"github.com/vhvplatform/go-notification-service/internal/repository"
+	"github.com/vhvplatform/go-notification-service/internal/shared/logger"
 )
 
 // BounceHandler handles email bounce webhooks

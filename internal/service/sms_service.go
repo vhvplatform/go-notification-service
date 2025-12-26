@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/vhvcorp/go-notification-service/internal/domain"
-	"github.com/vhvcorp/go-notification-service/internal/repository"
-	"github.com/vhvcorp/go-notification-service/internal/shared/logger"
+	"github.com/vhvplatform/go-notification-service/internal/domain"
+	"github.com/vhvplatform/go-notification-service/internal/repository"
+	"github.com/vhvplatform/go-notification-service/internal/shared/logger"
 )
 
 // SMSConfig holds SMS service configuration

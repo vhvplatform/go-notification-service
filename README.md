@@ -49,7 +49,7 @@ A robust, scalable notification service built in Go that provides unified API fo
 
 ```bash
 # Clone the repository
-git clone https://github.com/vhvcorp/go-notification-service.git
+git clone https://github.com/vhvplatform/go-notification-service.git
 cd go-notification-service
 
 # Install dependencies
@@ -70,7 +70,7 @@ make run
 
 ```bash
 # Clone the repository
-git clone https://github.com/vhvcorp/go-notification-service.git
+git clone https://github.com/vhvplatform/go-notification-service.git
 cd go-notification-service
 
 # Install dependencies
@@ -522,7 +522,7 @@ See [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for detailed troubleshooting g
 
 ## Related Repositories
 
-- [go-shared](https://github.com/vhvcorp/go-shared) - Shared Go libraries (deprecated, now using internal/shared)
+- [go-shared](https://github.com/vhvplatform/go-shared) - Shared Go libraries (deprecated, now using internal/shared)
 
 ## Changelog
 
@@ -534,10 +534,10 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## Support
 
-- **Documentation**: [GitHub Wiki](https://github.com/vhvcorp/go-notification-service/wiki)
-- **Issues**: [GitHub Issues](https://github.com/vhvcorp/go-notification-service/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/vhvcorp/go-notification-service/discussions)
-- **Email**: support@vhvcorp.com
+- **Documentation**: [GitHub Wiki](https://github.com/vhvplatform/go-notification-service/wiki)
+- **Issues**: [GitHub Issues](https://github.com/vhvplatform/go-notification-service/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/vhvplatform/go-notification-service/discussions)
+- **Email**: support@vhvplatform.com
 
 ## Acknowledgments
 

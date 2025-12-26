@@ -7,11 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
-	"github.com/vhvcorp/go-notification-service/internal/domain"
-	"github.com/vhvcorp/go-notification-service/internal/repository"
-	"github.com/vhvcorp/go-notification-service/internal/scheduler"
-	"github.com/vhvcorp/go-notification-service/internal/shared/errors"
-	"github.com/vhvcorp/go-notification-service/internal/shared/logger"
+	"github.com/vhvplatform/go-notification-service/internal/domain"
+	"github.com/vhvplatform/go-notification-service/internal/repository"
+	"github.com/vhvplatform/go-notification-service/internal/scheduler"
+	"github.com/vhvplatform/go-notification-service/internal/shared/errors"
+	"github.com/vhvplatform/go-notification-service/internal/shared/logger"
 )
 
 // ScheduleHandler handles scheduled notification requests

@@ -4,10 +4,10 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vhvcorp/go-notification-service/internal/domain"
-	"github.com/vhvcorp/go-notification-service/internal/service"
-	"github.com/vhvcorp/go-notification-service/internal/shared/errors"
-	"github.com/vhvcorp/go-notification-service/internal/shared/logger"
+	"github.com/vhvplatform/go-notification-service/internal/domain"
+	"github.com/vhvplatform/go-notification-service/internal/service"
+	"github.com/vhvplatform/go-notification-service/internal/shared/errors"
+	"github.com/vhvplatform/go-notification-service/internal/shared/logger"
 )
 
 // BulkHandler handles bulk notification operations
