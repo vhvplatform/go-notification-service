@@ -103,11 +103,11 @@ func BenchmarkApplyVariablesLarge(b *testing.B) {
 	variables["name"] = "John Doe"
 	
 	for i := 1; i <= 18; i++ {
-		key := "var" + string(rune('0'+i))
+		key := "var" + string(rune('a'+i-1))
 		templateBuilder.WriteString("{{")
 		templateBuilder.WriteString(key)
 		templateBuilder.WriteString("}} ")
-		variables[key] = "value" + string(rune('0'+i))
+		variables[key] = "value" + string(rune('a'+i-1))
 	}
 	
 	template := templateBuilder.String()
