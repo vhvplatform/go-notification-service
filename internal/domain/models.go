@@ -15,31 +15,58 @@ const (
 	NotificationTypeSMS     NotificationType = "sms"
 )
 
+// NotificationPriority represents the priority level of a notification
+type NotificationPriority string
+
+const (
+	NotificationPriorityCritical NotificationPriority = "critical" // Immediate delivery, bypass rate limits
+	NotificationPriorityHigh     NotificationPriority = "high"     // High priority, fast processing
+	NotificationPriorityNormal   NotificationPriority = "normal"   // Standard priority
+	NotificationPriorityLow      NotificationPriority = "low"      // Low priority, can be delayed
+)
+
 // NotificationStatus represents the status of a notification
 type NotificationStatus string
 
 const (
 	NotificationStatusPending   NotificationStatus = "pending"
-	NotificationStatusSent      NotificationStatus = "sent"
-	NotificationStatusFailed    NotificationStatus = "failed"
-	NotificationStatusDelivered NotificationStatus = "delivered"
+	NotificationStatusQueued    NotificationStatus = "queued"    // Queued for processing
+	NotificationStatusSending   NotificationStatus = "sending"   // Currently being sent
+	NotificationStatusSent      NotificationStatus = "sent"      // Successfully sent to provider
+	NotificationStatusDelivered NotificationStatus = "delivered" // Confirmed delivered to recipient
+	NotificationStatusFailed    NotificationStatus = "failed"    // Failed to send
+	NotificationStatusBounced   NotificationStatus = "bounced"   // Email bounced
+	NotificationStatusRead      NotificationStatus = "read"      // Recipient opened/read the notification
+	NotificationStatusClicked   NotificationStatus = "clicked"   // Recipient clicked links in notification
 )
 
 // Notification represents a notification record
 type Notification struct {
-	ID         primitive.ObjectID `json:"id" bson:"_id,omitempty"`
-	TenantID   string             `json:"tenant_id" bson:"tenant_id"`
-	Type       NotificationType   `json:"type" bson:"type"`
-	Status     NotificationStatus `json:"status" bson:"status"`
-	Recipient  string             `json:"recipient" bson:"recipient"`
-	Subject    string             `json:"subject,omitempty" bson:"subject,omitempty"`
-	Body       string             `json:"body,omitempty" bson:"body,omitempty"`
-	Payload    map[string]any     `json:"payload,omitempty" bson:"payload,omitempty"`
-	Error      string             `json:"error,omitempty" bson:"error,omitempty"`
-	RetryCount int                `json:"retry_count" bson:"retry_count"`
-	SentAt     *time.Time         `json:"sent_at,omitempty" bson:"sent_at,omitempty"`
-	CreatedAt  time.Time          `json:"created_at" bson:"created_at"`
-	UpdatedAt  time.Time          `json:"updated_at" bson:"updated_at"`
+	ID              primitive.ObjectID   `json:"id" bson:"_id,omitempty"`
+	TenantID        string               `json:"tenant_id" bson:"tenant_id"`
+	Type            NotificationType     `json:"type" bson:"type"`
+	Status          NotificationStatus   `json:"status" bson:"status"`
+	Priority        NotificationPriority `json:"priority" bson:"priority"`
+	Recipient       string               `json:"recipient" bson:"recipient"`
+	Subject         string               `json:"subject,omitempty" bson:"subject,omitempty"`
+	Body            string               `json:"body,omitempty" bson:"body,omitempty"`
+	Payload         map[string]any       `json:"payload,omitempty" bson:"payload,omitempty"`
+	Error           string               `json:"error,omitempty" bson:"error,omitempty"`
+	RetryCount      int                  `json:"retry_count" bson:"retry_count"`
+	IdempotencyKey  string               `json:"idempotency_key,omitempty" bson:"idempotency_key,omitempty"`
+	Tags            []string             `json:"tags,omitempty" bson:"tags,omitempty"`
+	Category        string               `json:"category,omitempty" bson:"category,omitempty"`
+	GroupID         string               `json:"group_id,omitempty" bson:"group_id,omitempty"`
+	ParentID        string               `json:"parent_id,omitempty" bson:"parent_id,omitempty"`
+	Metadata        map[string]string    `json:"metadata,omitempty" bson:"metadata,omitempty"`
+	SentAt          *time.Time           `json:"sent_at,omitempty" bson:"sent_at,omitempty"`
+	DeliveredAt     *time.Time           `json:"delivered_at,omitempty" bson:"delivered_at,omitempty"`
+	ReadAt          *time.Time           `json:"read_at,omitempty" bson:"read_at,omitempty"`
+	ClickedAt       *time.Time           `json:"clicked_at,omitempty" bson:"clicked_at,omitempty"`
+	ExpiresAt       *time.Time           `json:"expires_at,omitempty" bson:"expires_at,omitempty"`
+	ScheduledFor    *time.Time           `json:"scheduled_for,omitempty" bson:"scheduled_for,omitempty"`
+	CreatedAt       time.Time            `json:"created_at" bson:"created_at"`
+	UpdatedAt       time.Time            `json:"updated_at" bson:"updated_at"`
 }
 
 // EmailTemplate represents an email template

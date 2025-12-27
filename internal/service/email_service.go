@@ -134,6 +134,15 @@ func NewEmailService(config EmailConfig, notifRepo *repository.NotificationRepos
 
 // SendEmail sends an email notification with optimized batch processing and security validation
 func (s *EmailService) SendEmail(ctx context.Context, req *domain.SendEmailRequest) error {
+	// Check idempotency key if provided
+	if req.IdempotencyKey != "" {
+		existing, err := s.notifRepo.FindByIdempotencyKey(ctx, req.IdempotencyKey)
+		if err == nil && existing != nil {
+			s.log.Info("Idempotent request - notification already exists", "idempotency_key", req.IdempotencyKey, "notification_id", existing.ID.Hex())
+			return nil // Already processed
+		}
+	}
+
 	// Security validation on input
 	if err := validateEmailInput(req.To, req.Subject, req.Body, req.Variables); err != nil {
 		s.log.Warn("Email input validation failed", "error", err)
@@ -155,6 +164,12 @@ func (s *EmailService) SendEmail(ctx context.Context, req *domain.SendEmailReque
 		body = s.applyVariables(template.Body, req.Variables)
 	}
 
+	// Set default priority if not specified
+	priority := req.Priority
+	if priority == "" {
+		priority = domain.NotificationPriorityNormal
+	}
+
 	// Validate recipients and create notification records in batch
 	var validRecipients []string
 	var notifications []*domain.Notification
@@ -168,12 +183,21 @@ func (s *EmailService) SendEmail(ctx context.Context, req *domain.SendEmailReque
 
 		validRecipients = append(validRecipients, recipient)
 		notifications = append(notifications, &domain.Notification{
-			TenantID:  req.TenantID,
-			Type:      domain.NotificationTypeEmail,
-			Status:    domain.NotificationStatusPending,
-			Recipient: recipient,
-			Subject:   subject,
-			Body:      body,
+			TenantID:       req.TenantID,
+			Type:           domain.NotificationTypeEmail,
+			Status:         domain.NotificationStatusPending,
+			Priority:       priority,
+			Recipient:      recipient,
+			Subject:        subject,
+			Body:           body,
+			IdempotencyKey: req.IdempotencyKey,
+			Tags:           req.Tags,
+			Category:       req.Category,
+			GroupID:        req.GroupID,
+			ParentID:       req.ParentID,
+			Metadata:       req.Metadata,
+			ExpiresAt:      req.ExpiresAt,
+			ScheduledFor:   req.ScheduledFor,
 		})
 	}
 
