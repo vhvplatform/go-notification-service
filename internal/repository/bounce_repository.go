@@ -8,6 +8,8 @@ import (
 	"github.com/vhvplatform/go-notification-service/internal/shared/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const bouncesCollection = "email_bounces"
@@ -20,6 +22,29 @@ type BounceRepository struct {
 // NewBounceRepository creates a new bounce repository
 func NewBounceRepository(client *mongodb.MongoClient) *BounceRepository {
 	return &BounceRepository{client: client}
+}
+
+// EnsureIndexes creates necessary indexes for optimal query performance
+func (r *BounceRepository) EnsureIndexes(ctx context.Context) error {
+	indexes := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "email", Value: 1},
+				{Key: "timestamp", Value: -1},
+			},
+			Options: options.Index().SetName("email_timestamp_idx"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "email", Value: 1},
+				{Key: "type", Value: 1},
+				{Key: "timestamp", Value: -1},
+			},
+			Options: options.Index().SetName("email_type_timestamp_idx"),
+		},
+	}
+
+	return r.client.CreateIndexes(ctx, bouncesCollection, indexes)
 }
 
 // Create creates a new bounce record

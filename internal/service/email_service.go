@@ -281,15 +281,24 @@ func (s *EmailService) sendViaDirect(to, subject, body string, isHTML bool) erro
 
 // applyVariables replaces template variables with actual values
 // Variables are HTML escaped to prevent XSS vulnerabilities
+// Uses strings.Replacer for efficient multiple replacements
 func (s *EmailService) applyVariables(template string, variables map[string]string) string {
-	result := template
+	if len(variables) == 0 {
+		return template
+	}
+
+	// Build replacement pairs for strings.Replacer (more efficient than multiple ReplaceAll)
+	replacements := make([]string, 0, len(variables)*2)
 	for key, value := range variables {
 		// HTML escape the value to prevent XSS
 		escapedValue := html.EscapeString(value)
 		placeholder := fmt.Sprintf("{{%s}}", key)
-		result = strings.ReplaceAll(result, placeholder, escapedValue)
+		replacements = append(replacements, placeholder, escapedValue)
 	}
-	return result
+
+	// Use strings.Replacer for efficient batch replacement
+	replacer := strings.NewReplacer(replacements...)
+	return replacer.Replace(template)
 }
 
 // isValidEmail validates email address format
