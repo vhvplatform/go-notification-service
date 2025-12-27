@@ -8,6 +8,7 @@ import (
 	"github.com/vhvplatform/go-notification-service/internal/shared/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -21,6 +22,27 @@ type FailedNotificationRepository struct {
 // NewFailedNotificationRepository creates a new failed notification repository
 func NewFailedNotificationRepository(client *mongodb.MongoClient) *FailedNotificationRepository {
 	return &FailedNotificationRepository{client: client}
+}
+
+// EnsureIndexes creates necessary indexes for optimal query performance
+func (r *FailedNotificationRepository) EnsureIndexes(ctx context.Context) error {
+	indexes := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "tenant_id", Value: 1},
+				{Key: "failed_at", Value: -1},
+			},
+			Options: options.Index().SetName("tenant_failed_at_idx"),
+		},
+		{
+			Keys: bson.D{
+				{Key: "failed_at", Value: -1},
+			},
+			Options: options.Index().SetName("failed_at_idx"),
+		},
+	}
+
+	return r.client.CreateIndexes(ctx, failedNotificationsCollection, indexes)
 }
 
 // Create creates a new failed notification record
@@ -48,33 +70,51 @@ func (r *FailedNotificationRepository) FindByID(ctx context.Context, id string) 
 	return &failed, nil
 }
 
-// FindAll retrieves all failed notifications with pagination
+// FindAll retrieves all failed notifications with pagination using optimized aggregation
 func (r *FailedNotificationRepository) FindAll(ctx context.Context, page, pageSize int) ([]*domain.FailedNotification, int64, error) {
-	// Get total count
-	total, err := r.client.Collection(failedNotificationsCollection).CountDocuments(ctx, bson.M{})
-	if err != nil {
-		return nil, 0, err
-	}
-
 	// Calculate pagination
 	skip := (page - 1) * pageSize
-	opts := options.Find().
-		SetSkip(int64(skip)).
-		SetLimit(int64(pageSize)).
-		SetSort(bson.M{"failed_at": -1})
 
-	cursor, err := r.client.Collection(failedNotificationsCollection).Find(ctx, bson.M{}, opts)
+	// Use aggregation pipeline for efficient count + results in one query
+	pipeline := mongo.Pipeline{
+		{{Key: "$facet", Value: bson.M{
+			"metadata": bson.A{bson.M{"$count": "total"}},
+			"data": bson.A{
+				bson.M{"$sort": bson.M{"failed_at": -1}},
+				bson.M{"$skip": skip},
+				bson.M{"$limit": pageSize},
+			},
+		}}},
+	}
+
+	cursor, err := r.client.Collection(failedNotificationsCollection).Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer cursor.Close(ctx)
 
-	var failed []*domain.FailedNotification
-	if err = cursor.All(ctx, &failed); err != nil {
+	type Result struct {
+		Metadata []struct {
+			Total int64 `bson:"total"`
+		} `bson:"metadata"`
+		Data []*domain.FailedNotification `bson:"data"`
+	}
+
+	var results []Result
+	if err = cursor.All(ctx, &results); err != nil {
 		return nil, 0, err
 	}
 
-	return failed, total, nil
+	if len(results) == 0 || len(results[0].Data) == 0 {
+		return []*domain.FailedNotification{}, 0, nil
+	}
+
+	total := int64(0)
+	if len(results[0].Metadata) > 0 {
+		total = results[0].Metadata[0].Total
+	}
+
+	return results[0].Data, total, nil
 }
 
 // Delete deletes a failed notification by ID

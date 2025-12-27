@@ -24,6 +24,21 @@ func NewPreferencesRepository(client *mongodb.MongoClient) *PreferencesRepositor
 	return &PreferencesRepository{client: client}
 }
 
+// EnsureIndexes creates necessary indexes for optimal query performance
+func (r *PreferencesRepository) EnsureIndexes(ctx context.Context) error {
+	indexes := []mongo.IndexModel{
+		{
+			Keys: bson.D{
+				{Key: "tenant_id", Value: 1},
+				{Key: "user_id", Value: 1},
+			},
+			Options: options.Index().SetName("tenant_user_idx").SetUnique(true),
+		},
+	}
+
+	return r.client.CreateIndexes(ctx, preferencesCollection, indexes)
+}
+
 // GetByUserID retrieves preferences for a specific user
 func (r *PreferencesRepository) GetByUserID(ctx context.Context, tenantID, userID string) (*domain.NotificationPreferences, error) {
 	var prefs domain.NotificationPreferences

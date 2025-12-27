@@ -65,7 +65,8 @@ func (s *BulkEmailService) worker(id int) {
 			// Update queue size metric
 			metrics.EmailQueueSize.Set(float64(s.queue.Len()))
 
-			ctx := context.Background()
+			// Create context with timeout for each job
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			start := time.Now()
 
 			if err := s.emailService.SendEmail(ctx, job.Request); err != nil {
@@ -78,6 +79,8 @@ func (s *BulkEmailService) worker(id int) {
 			// Record duration
 			duration := time.Since(start).Seconds()
 			metrics.NotificationDuration.WithLabelValues("email").Observe(duration)
+
+			cancel() // Clean up context
 		}
 	}
 }
