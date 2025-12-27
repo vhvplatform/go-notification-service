@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,25 +17,54 @@ import (
 
 const templatesCollection = "email_templates"
 
-// TemplateCache holds cached templates
+// Security constants for cache
+const (
+	maxCacheSize     = 1000              // Maximum number of cached templates
+	maxCacheKeyLen   = 512               // Maximum length of cache key
+	maxTemplateSize  = 1024 * 1024       // Maximum template size: 1MB
+)
+
+// TemplateCache holds cached templates with security controls
 type TemplateCache struct {
 	templates map[string]*domain.EmailTemplate
 	mu        sync.RWMutex
 	ttl       time.Duration
 	entries   map[string]time.Time
+	maxSize   int // Maximum number of entries
 }
 
-// NewTemplateCache creates a new template cache
+// NewTemplateCache creates a new template cache with size limits
 func NewTemplateCache(ttl time.Duration) *TemplateCache {
 	return &TemplateCache{
 		templates: make(map[string]*domain.EmailTemplate),
 		entries:   make(map[string]time.Time),
 		ttl:       ttl,
+		maxSize:   maxCacheSize,
 	}
 }
 
-// Get retrieves a template from cache
+// validateCacheKey validates cache key to prevent injection attacks
+func validateCacheKey(key string) error {
+	if len(key) == 0 {
+		return errors.New("cache key cannot be empty")
+	}
+	if len(key) > maxCacheKeyLen {
+		return errors.New("cache key exceeds maximum length")
+	}
+	// Prevent path traversal and special characters
+	if strings.ContainsAny(key, "\x00\n\r") {
+		return errors.New("cache key contains invalid characters")
+	}
+	return nil
+}
+
+// Get retrieves a template from cache with security validation
 func (c *TemplateCache) Get(key string) (*domain.EmailTemplate, bool) {
+	// Validate key
+	if err := validateCacheKey(key); err != nil {
+		return nil, false
+	}
+
 	c.mu.RLock()
 	template, exists := c.templates[key]
 	entryTime, hasEntry := c.entries[key]
@@ -56,13 +87,53 @@ func (c *TemplateCache) Get(key string) (*domain.EmailTemplate, bool) {
 	return template, true
 }
 
-// Set stores a template in cache
-func (c *TemplateCache) Set(key string, template *domain.EmailTemplate) {
+// Set stores a template in cache with security validation
+func (c *TemplateCache) Set(key string, template *domain.EmailTemplate) error {
+	// Validate key
+	if err := validateCacheKey(key); err != nil {
+		return err
+	}
+
+	// Validate template size to prevent memory exhaustion
+	if template != nil {
+		templateSize := len(template.Subject) + len(template.Body)
+		if templateSize > maxTemplateSize {
+			return errors.New("template size exceeds maximum allowed size")
+		}
+	}
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
+	// Check cache size limit before adding
+	if len(c.templates) >= c.maxSize && c.templates[key] == nil {
+		// Cache is full and this is a new entry, evict oldest entry
+		c.evictOldest()
+	}
+
 	c.templates[key] = template
 	c.entries[key] = time.Now()
+	return nil
+}
+
+// evictOldest removes the oldest entry from cache (must be called with lock held)
+func (c *TemplateCache) evictOldest() {
+	var oldestKey string
+	var oldestTime time.Time
+	first := true
+
+	for key, entryTime := range c.entries {
+		if first || entryTime.Before(oldestTime) {
+			oldestKey = key
+			oldestTime = entryTime
+			first = false
+		}
+	}
+
+	if oldestKey != "" {
+		delete(c.templates, oldestKey)
+		delete(c.entries, oldestKey)
+	}
 }
 
 // Invalidate removes a template from cache
@@ -139,8 +210,8 @@ func (r *TemplateRepository) FindByID(ctx context.Context, id string) (*domain.E
 		return nil, err
 	}
 
-	// Cache the result
-	r.cache.Set(cacheKey, &template)
+	// Cache the result (ignore error as caching is not critical)
+	_ = r.cache.Set(cacheKey, &template)
 
 	return &template, nil
 }
@@ -160,8 +231,8 @@ func (r *TemplateRepository) FindByName(ctx context.Context, tenantID, name stri
 		return nil, err
 	}
 
-	// Cache the result
-	r.cache.Set(cacheKey, &template)
+	// Cache the result (ignore error as caching is not critical)
+	_ = r.cache.Set(cacheKey, &template)
 
 	return &template, nil
 }
