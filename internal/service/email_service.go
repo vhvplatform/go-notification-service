@@ -72,7 +72,7 @@ func NewEmailService(config EmailConfig, notifRepo *repository.NotificationRepos
 	}
 }
 
-// SendEmail sends an email notification
+// SendEmail sends an email notification with optimized batch processing
 func (s *EmailService) SendEmail(ctx context.Context, req *domain.SendEmailRequest) error {
 	// Apply template if specified
 	subject := req.Subject
@@ -89,7 +89,10 @@ func (s *EmailService) SendEmail(ctx context.Context, req *domain.SendEmailReque
 		body = s.applyVariables(template.Body, req.Variables)
 	}
 
-	// Create notification record for each recipient
+	// Validate recipients and create notification records in batch
+	var validRecipients []string
+	var notifications []*domain.Notification
+
 	for _, recipient := range req.To {
 		// Validate email address
 		if !s.isValidEmail(recipient) {
@@ -97,30 +100,38 @@ func (s *EmailService) SendEmail(ctx context.Context, req *domain.SendEmailReque
 			continue
 		}
 
-		notification := &domain.Notification{
+		validRecipients = append(validRecipients, recipient)
+		notifications = append(notifications, &domain.Notification{
 			TenantID:  req.TenantID,
 			Type:      domain.NotificationTypeEmail,
 			Status:    domain.NotificationStatusPending,
 			Recipient: recipient,
 			Subject:   subject,
 			Body:      body,
-		}
+		})
+	}
 
-		if err := s.notifRepo.Create(ctx, notification); err != nil {
-			s.log.Error("Failed to create notification record", "error", err)
-			continue
-		}
+	if len(notifications) == 0 {
+		return fmt.Errorf("no valid recipients")
+	}
 
-		// Send email
+	// Batch create notification records
+	if err := s.notifRepo.CreateBatch(ctx, notifications); err != nil {
+		s.log.Error("Failed to create notification records", "error", err)
+		return err
+	}
+
+	// Send emails
+	for i, recipient := range validRecipients {
 		if err := s.sendSMTPEmail(recipient, subject, body, req.IsHTML); err != nil {
 			s.log.Error("Failed to send email", "error", err, "recipient", recipient)
-			s.notifRepo.UpdateStatus(ctx, notification.ID.Hex(), domain.NotificationStatusFailed, err.Error(), nil)
+			s.notifRepo.UpdateStatus(ctx, notifications[i].ID.Hex(), domain.NotificationStatusFailed, err.Error(), nil)
 			continue
 		}
 
 		// Update status to sent with current timestamp
 		now := time.Now()
-		s.notifRepo.UpdateStatus(ctx, notification.ID.Hex(), domain.NotificationStatusSent, "", &now)
+		s.notifRepo.UpdateStatus(ctx, notifications[i].ID.Hex(), domain.NotificationStatusSent, "", &now)
 	}
 
 	return nil
