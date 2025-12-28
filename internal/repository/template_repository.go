@@ -164,15 +164,15 @@ func (r *TemplateRepository) EnsureIndexes(ctx context.Context) error {
 	indexes := []mongo.IndexModel{
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
+				{Key: "tenantId", Value: 1},
 				{Key: "name", Value: 1},
 			},
 			Options: options.Index().SetName("tenant_name_idx").SetUnique(true),
 		},
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
-				{Key: "created_at", Value: -1},
+				{Key: "tenantId", Value: 1},
+				{Key: "createdAt", Value: -1},
 			},
 			Options: options.Index().SetName("tenant_created_idx"),
 		},
@@ -225,7 +225,7 @@ func (r *TemplateRepository) FindByName(ctx context.Context, tenantID, name stri
 	}
 
 	var template domain.EmailTemplate
-	filter := bson.M{"tenant_id": tenantID, "name": name}
+	filter := bson.M{"tenantId": tenantID, "name": name}
 	err := r.client.Collection(templatesCollection).FindOne(ctx, filter).Decode(&template)
 	if err != nil {
 		return nil, err

@@ -29,14 +29,14 @@ func (r *FailedNotificationRepository) EnsureIndexes(ctx context.Context) error 
 	indexes := []mongo.IndexModel{
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
-				{Key: "failed_at", Value: -1},
+				{Key: "tenantId", Value: 1},
+				{Key: "failedAt", Value: -1},
 			},
 			Options: options.Index().SetName("tenant_failed_at_idx"),
 		},
 		{
 			Keys: bson.D{
-				{Key: "failed_at", Value: -1},
+				{Key: "failedAt", Value: -1},
 			},
 			Options: options.Index().SetName("failed_at_idx"),
 		},
@@ -80,7 +80,7 @@ func (r *FailedNotificationRepository) FindAll(ctx context.Context, page, pageSi
 		{{Key: "$facet", Value: bson.M{
 			"metadata": bson.A{bson.M{"$count": "total"}},
 			"data": bson.A{
-				bson.M{"$sort": bson.M{"failed_at": -1}},
+				bson.M{"$sort": bson.M{"failedAt": -1}},
 				bson.M{"$skip": skip},
 				bson.M{"$limit": pageSize},
 			},
