@@ -29,14 +29,14 @@ func (r *ScheduledNotificationRepository) EnsureIndexes(ctx context.Context) err
 	indexes := []mongo.IndexModel{
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
-				{Key: "created_at", Value: -1},
+				{Key: "tenantId", Value: 1},
+				{Key: "createdAt", Value: -1},
 			},
 			Options: options.Index().SetName("tenant_created_idx"),
 		},
 		{
 			Keys: bson.D{
-				{Key: "is_active", Value: 1},
+				{Key: "isActive", Value: 1},
 			},
 			Options: options.Index().SetName("is_active_idx"),
 		},
@@ -73,7 +73,7 @@ func (r *ScheduledNotificationRepository) FindByID(ctx context.Context, id strin
 
 // FindActive finds all active scheduled notifications
 func (r *ScheduledNotificationRepository) FindActive(ctx context.Context) ([]*domain.ScheduledNotification, error) {
-	filter := bson.M{"is_active": true}
+	filter := bson.M{"isActive": true}
 	cursor, err := r.client.Collection(scheduledNotificationsCollection).Find(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (r *ScheduledNotificationRepository) FindActive(ctx context.Context) ([]*do
 
 // FindByTenantID finds scheduled notifications by tenant ID with optimized pagination
 func (r *ScheduledNotificationRepository) FindByTenantID(ctx context.Context, tenantID string, page, pageSize int) ([]*domain.ScheduledNotification, int64, error) {
-	filter := bson.M{"tenant_id": tenantID}
+	filter := bson.M{"tenantId": tenantID}
 
 	// Calculate pagination
 	skip := (page - 1) * pageSize
@@ -101,7 +101,7 @@ func (r *ScheduledNotificationRepository) FindByTenantID(ctx context.Context, te
 		{{Key: "$facet", Value: bson.M{
 			"metadata": bson.A{bson.M{"$count": "total"}},
 			"data": bson.A{
-				bson.M{"$sort": bson.M{"created_at": -1}},
+				bson.M{"$sort": bson.M{"createdAt": -1}},
 				bson.M{"$skip": skip},
 				bson.M{"$limit": pageSize},
 			},

@@ -29,8 +29,8 @@ func (r *PreferencesRepository) EnsureIndexes(ctx context.Context) error {
 	indexes := []mongo.IndexModel{
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
-				{Key: "user_id", Value: 1},
+				{Key: "tenantId", Value: 1},
+				{Key: "userId", Value: 1},
 			},
 			Options: options.Index().SetName("tenant_user_idx").SetUnique(true),
 		},
@@ -42,7 +42,7 @@ func (r *PreferencesRepository) EnsureIndexes(ctx context.Context) error {
 // GetByUserID retrieves preferences for a specific user
 func (r *PreferencesRepository) GetByUserID(ctx context.Context, tenantID, userID string) (*domain.NotificationPreferences, error) {
 	var prefs domain.NotificationPreferences
-	filter := bson.M{"tenant_id": tenantID, "user_id": userID}
+	filter := bson.M{"tenantId": tenantID, "userId": userID}
 	err := r.client.Collection(preferencesCollection).FindOne(ctx, filter).Decode(&prefs)
 
 	if err == mongo.ErrNoDocuments {
@@ -75,7 +75,7 @@ func (r *PreferencesRepository) Create(ctx context.Context, prefs *domain.Notifi
 // Update updates preferences
 func (r *PreferencesRepository) Update(ctx context.Context, prefs *domain.NotificationPreferences) error {
 	prefs.UpdatedAt = time.Now()
-	filter := bson.M{"tenant_id": prefs.TenantID, "user_id": prefs.UserID}
+	filter := bson.M{"tenantId": prefs.TenantID, "userId": prefs.UserID}
 	update := bson.M{"$set": prefs}
 	opts := options.Update().SetUpsert(true)
 

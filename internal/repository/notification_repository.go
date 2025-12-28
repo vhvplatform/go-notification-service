@@ -29,46 +29,46 @@ func (r *NotificationRepository) EnsureIndexes(ctx context.Context) error {
 	indexes := []mongo.IndexModel{
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
-				{Key: "created_at", Value: -1},
+				{Key: "tenantId", Value: 1},
+				{Key: "createdAt", Value: -1},
 			},
 			Options: options.Index().SetName("tenant_created_idx"),
 		},
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
+				{Key: "tenantId", Value: 1},
 				{Key: "type", Value: 1},
-				{Key: "created_at", Value: -1},
+				{Key: "createdAt", Value: -1},
 			},
 			Options: options.Index().SetName("tenant_type_created_idx"),
 		},
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
+				{Key: "tenantId", Value: 1},
 				{Key: "status", Value: 1},
-				{Key: "created_at", Value: -1},
+				{Key: "createdAt", Value: -1},
 			},
 			Options: options.Index().SetName("tenant_status_created_idx"),
 		},
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
+				{Key: "tenantId", Value: 1},
 				{Key: "type", Value: 1},
 				{Key: "status", Value: 1},
-				{Key: "created_at", Value: -1},
+				{Key: "createdAt", Value: -1},
 			},
 			Options: options.Index().SetName("tenant_type_status_created_idx"),
 		},
 		{
 			Keys: bson.D{
 				{Key: "status", Value: 1},
-				{Key: "created_at", Value: 1},
+				{Key: "createdAt", Value: 1},
 			},
 			Options: options.Index().SetName("status_created_idx"),
 		},
 		{
 			Keys: bson.D{
-				{Key: "idempotency_key", Value: 1},
+				{Key: "idempotencyKey", Value: 1},
 			},
 			Options: options.Index().
 				SetName("idempotency_key_idx").
@@ -77,38 +77,38 @@ func (r *NotificationRepository) EnsureIndexes(ctx context.Context) error {
 		},
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
+				{Key: "tenantId", Value: 1},
 				{Key: "priority", Value: 1},
-				{Key: "created_at", Value: -1},
+				{Key: "createdAt", Value: -1},
 			},
 			Options: options.Index().SetName("tenant_priority_created_idx"),
 		},
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
+				{Key: "tenantId", Value: 1},
 				{Key: "category", Value: 1},
-				{Key: "created_at", Value: -1},
+				{Key: "createdAt", Value: -1},
 			},
 			Options: options.Index().SetName("tenant_category_created_idx"),
 		},
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
-				{Key: "group_id", Value: 1},
-				{Key: "created_at", Value: -1},
+				{Key: "tenantId", Value: 1},
+				{Key: "groupId", Value: 1},
+				{Key: "createdAt", Value: -1},
 			},
 			Options: options.Index().SetName("tenant_group_created_idx"),
 		},
 		{
 			Keys: bson.D{
-				{Key: "tenant_id", Value: 1},
+				{Key: "tenantId", Value: 1},
 				{Key: "tags", Value: 1},
 			},
 			Options: options.Index().SetName("tenant_tags_idx"),
 		},
 		{
 			Keys: bson.D{
-				{Key: "scheduled_for", Value: 1},
+				{Key: "scheduledFor", Value: 1},
 			},
 			Options: options.Index().
 				SetName("scheduled_for_idx").
@@ -116,7 +116,7 @@ func (r *NotificationRepository) EnsureIndexes(ctx context.Context) error {
 		},
 		{
 			Keys: bson.D{
-				{Key: "expires_at", Value: 1},
+				{Key: "expiresAt", Value: 1},
 			},
 			Options: options.Index().
 				SetName("expires_at_idx").
@@ -168,7 +168,7 @@ func (r *NotificationRepository) Update(ctx context.Context, notification *domai
 // FindByTenantID finds notifications by tenant ID with pagination
 // Uses aggregation pipeline for better performance with count
 func (r *NotificationRepository) FindByTenantID(ctx context.Context, tenantID string, notificationType domain.NotificationType, status domain.NotificationStatus, page, pageSize int) ([]*domain.Notification, int64, error) {
-	matchStage := bson.M{"tenant_id": tenantID}
+	matchStage := bson.M{"tenantId": tenantID}
 
 	if notificationType != "" {
 		matchStage["type"] = notificationType
@@ -186,7 +186,7 @@ func (r *NotificationRepository) FindByTenantID(ctx context.Context, tenantID st
 		{{Key: "$facet", Value: bson.M{
 			"metadata": bson.A{bson.M{"$count": "total"}},
 			"data": bson.A{
-				bson.M{"$sort": bson.M{"created_at": -1}},
+				bson.M{"$sort": bson.M{"createdAt": -1}},
 				bson.M{"$skip": skip},
 				bson.M{"$limit": pageSize},
 			},
@@ -232,8 +232,8 @@ func (r *NotificationRepository) UpdateStatus(ctx context.Context, id string, st
 
 	update := bson.M{
 		"$set": bson.M{
-			"status":     status,
-			"updated_at": time.Now(),
+			"status":    status,
+			"updatedAt": time.Now(),
 		},
 	}
 
@@ -242,7 +242,7 @@ func (r *NotificationRepository) UpdateStatus(ctx context.Context, id string, st
 	}
 
 	if sentAt != nil {
-		update["$set"].(bson.M)["sent_at"] = sentAt
+		update["$set"].(bson.M)["sentAt"] = sentAt
 	}
 
 	filter := bson.M{"_id": objectID}
@@ -259,8 +259,8 @@ func (r *NotificationRepository) IncrementRetryCount(ctx context.Context, id str
 
 	filter := bson.M{"_id": objectID}
 	update := bson.M{
-		"$inc": bson.M{"retry_count": 1},
-		"$set": bson.M{"updated_at": time.Now()},
+		"$inc": bson.M{"retryCount": 1},
+		"$set": bson.M{"updatedAt": time.Now()},
 	}
 
 	_, err = r.client.Collection(notificationsCollection).UpdateOne(ctx, filter, update)
@@ -289,7 +289,7 @@ func (r *NotificationRepository) CreateBatch(ctx context.Context, notifications 
 // FindByIdempotencyKey finds a notification by idempotency key
 func (r *NotificationRepository) FindByIdempotencyKey(ctx context.Context, idempotencyKey string) (*domain.Notification, error) {
 	var notification domain.Notification
-	filter := bson.M{"idempotency_key": idempotencyKey}
+	filter := bson.M{"idempotencyKey": idempotencyKey}
 	err := r.client.Collection(notificationsCollection).FindOne(ctx, filter).Decode(&notification)
 	if err != nil {
 		return nil, err
@@ -306,21 +306,21 @@ func (r *NotificationRepository) UpdateDeliveryStatus(ctx context.Context, id st
 
 	update := bson.M{
 		"$set": bson.M{
-			"status":     status,
-			"updated_at": time.Now(),
+			"status":    status,
+			"updatedAt": time.Now(),
 		},
 	}
 
 	// Set appropriate timestamp based on status
 	switch status {
 	case domain.NotificationStatusSent:
-		update["$set"].(bson.M)["sent_at"] = timestamp
+		update["$set"].(bson.M)["sentAt"] = timestamp
 	case domain.NotificationStatusDelivered:
-		update["$set"].(bson.M)["delivered_at"] = timestamp
+		update["$set"].(bson.M)["deliveredAt"] = timestamp
 	case domain.NotificationStatusRead:
-		update["$set"].(bson.M)["read_at"] = timestamp
+		update["$set"].(bson.M)["readAt"] = timestamp
 	case domain.NotificationStatusClicked:
-		update["$set"].(bson.M)["clicked_at"] = timestamp
+		update["$set"].(bson.M)["clickedAt"] = timestamp
 	}
 
 	filter := bson.M{"_id": objectID}
@@ -331,8 +331,8 @@ func (r *NotificationRepository) UpdateDeliveryStatus(ctx context.Context, id st
 // FindByGroupID finds notifications by group ID
 func (r *NotificationRepository) FindByGroupID(ctx context.Context, tenantID, groupID string, page, pageSize int) ([]*domain.Notification, int64, error) {
 	filter := bson.M{
-		"tenant_id": tenantID,
-		"group_id":  groupID,
+		"tenantId": tenantID,
+		"groupId":  groupID,
 	}
 
 	skip := (page - 1) * pageSize
@@ -342,7 +342,7 @@ func (r *NotificationRepository) FindByGroupID(ctx context.Context, tenantID, gr
 		{{Key: "$facet", Value: bson.M{
 			"metadata": bson.A{bson.M{"$count": "total"}},
 			"data": bson.A{
-				bson.M{"$sort": bson.M{"created_at": -1}},
+				bson.M{"$sort": bson.M{"createdAt": -1}},
 				bson.M{"$skip": skip},
 				bson.M{"$limit": pageSize},
 			},
@@ -382,8 +382,8 @@ func (r *NotificationRepository) FindByGroupID(ctx context.Context, tenantID, gr
 // FindByCategory finds notifications by category
 func (r *NotificationRepository) FindByCategory(ctx context.Context, tenantID, category string, page, pageSize int) ([]*domain.Notification, int64, error) {
 	filter := bson.M{
-		"tenant_id": tenantID,
-		"category":  category,
+		"tenantId": tenantID,
+		"category": category,
 	}
 
 	skip := (page - 1) * pageSize
@@ -393,7 +393,7 @@ func (r *NotificationRepository) FindByCategory(ctx context.Context, tenantID, c
 		{{Key: "$facet", Value: bson.M{
 			"metadata": bson.A{bson.M{"$count": "total"}},
 			"data": bson.A{
-				bson.M{"$sort": bson.M{"created_at": -1}},
+				bson.M{"$sort": bson.M{"createdAt": -1}},
 				bson.M{"$skip": skip},
 				bson.M{"$limit": pageSize},
 			},
@@ -433,8 +433,8 @@ func (r *NotificationRepository) FindByCategory(ctx context.Context, tenantID, c
 // FindByTags finds notifications by tags
 func (r *NotificationRepository) FindByTags(ctx context.Context, tenantID string, tags []string, page, pageSize int) ([]*domain.Notification, int64, error) {
 	filter := bson.M{
-		"tenant_id": tenantID,
-		"tags":      bson.M{"$in": tags},
+		"tenantId": tenantID,
+		"tags":     bson.M{"$in": tags},
 	}
 
 	skip := (page - 1) * pageSize
@@ -444,7 +444,7 @@ func (r *NotificationRepository) FindByTags(ctx context.Context, tenantID string
 		{{Key: "$facet", Value: bson.M{
 			"metadata": bson.A{bson.M{"$count": "total"}},
 			"data": bson.A{
-				bson.M{"$sort": bson.M{"created_at": -1}},
+				bson.M{"$sort": bson.M{"createdAt": -1}},
 				bson.M{"$skip": skip},
 				bson.M{"$limit": pageSize},
 			},
