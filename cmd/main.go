@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/vhvplatform/go-notification-service/internal/consumer"
 	"github.com/vhvplatform/go-notification-service/internal/dlq"
@@ -27,9 +28,17 @@ import (
 )
 
 func main() {
+	// Load .env file
+	envErr := godotenv.Load()
+
 	// Initialize logger
 	log := logger.NewLogger()
 	defer log.Sync()
+
+	// Log .env loading status
+	if envErr != nil {
+		log.Warn("No .env file found or error loading .env file", "error", envErr)
+	}
 
 	log.Info("Starting Notification Service...")
 
