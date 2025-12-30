@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/vhvplatform/go-notification-service/internal/consumer"
 	"github.com/vhvplatform/go-notification-service/internal/dlq"
@@ -27,6 +28,12 @@ import (
 )
 
 func main() {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		// Don't fail if .env file is not found - use system environment variables
+		// This is intentional for backward compatibility and deployment flexibility
+	}
+
 	// Initialize logger
 	log := logger.NewLogger()
 	defer log.Sync()

@@ -56,9 +56,9 @@ cd go-notification-service
 # Install dependencies
 go mod download
 
-# Set up environment variables
+# Configure environment variables
 cp .env.example .env
-# Edit .env with your configuration
+# Edit .env with your configuration (see Configuration section below)
 
 # Run with Docker Compose (recommended for development)
 docker-compose up -d
@@ -80,27 +80,51 @@ go mod download
 
 ## Configuration
 
+The application is configured using environment variables that can be loaded from a `.env` file or set as system environment variables.
+
+### Setting up .env file
+
+1. Copy the example environment file:
+```bash
+cp .env.example .env
+```
+
+2. Edit the `.env` file with your configuration:
+```bash
+# Open in your favorite editor
+nano .env
+# or
+vim .env
+```
+
+3. **Important Security Note**: 
+   - ⚠️ **Never commit the `.env` file** to version control - it contains sensitive credentials
+   - The `.env` file is already included in `.gitignore` to prevent accidental commits
+   - Use `.env.example` as a template for documentation
+
 ### Environment Variables
 
 ```bash
 # Server Configuration
 NOTIFICATION_SERVICE_PORT=8084
 
-# MongoDB
+# MongoDB Configuration
 MONGODB_URI=mongodb://localhost:27017
 MONGODB_DATABASE=notification_service
 
-# RabbitMQ
-RABBITMQ_URL=******localhost:5672/
+# RabbitMQ Configuration
+RABBITMQ_URL=amqp://guest:guest@localhost:5672/
 
-# Email Configuration
+# SMTP Configuration
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
+SMTP_USERNAME=your-email@example.com
 SMTP_PASSWORD=your-password
 SMTP_FROM_EMAIL=noreply@example.com
 SMTP_FROM_NAME=Notification Service
 SMTP_POOL_SIZE=10
+
+# Email Workers
 EMAIL_WORKERS=5
 
 # SMS Configuration
@@ -109,21 +133,32 @@ TWILIO_SID=your-account-sid
 TWILIO_TOKEN=your-auth-token
 TWILIO_FROM=+1234567890
 
-# AWS Configuration (for SES/SNS)
+# AWS Configuration (for SNS)
+AWS_SNS_ARN=arn:aws:sns:us-east-1:123456789012:your-topic
 AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=your-access-key
-AWS_SECRET_ACCESS_KEY=your-secret-key
 
 # Rate Limiting
 RATE_LIMIT_PER_TENANT=100
 RATE_LIMIT_BURST=200
-
-# Logging
-LOG_LEVEL=info
-LOG_FORMAT=json
 ```
 
-See [DEPENDENCIES.md](docs/DEPENDENCIES.md) for a complete list of environment variables.
+### Configuration Precedence
+
+The application loads environment variables in the following order:
+1. System environment variables (highest priority)
+2. Variables from `.env` file
+3. Default values in the code (lowest priority)
+
+This means you can:
+- Use `.env` file for local development
+- Override specific variables using system environment variables
+- Run in production without a `.env` file using system environment variables
+
+### Backward Compatibility
+
+The application will continue to work without a `.env` file - it will use system environment variables and default values. This ensures compatibility with existing deployments and containerized environments.
+
+See [DEPENDENCIES.md](docs/DEPENDENCIES.md) for a complete list of environment variables and their descriptions.
 
 ## Usage
 

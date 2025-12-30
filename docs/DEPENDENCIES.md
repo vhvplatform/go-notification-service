@@ -45,27 +45,181 @@ require (
 
 ## Environment Variables
 
+The application loads environment variables from a `.env` file (if present) or from system environment variables. 
+
+### Configuration Setup
+
+1. **For Local Development**:
 ```bash
-# Server
-NOTIFICATION_SERVICE_PORT=50054
-NOTIFICATION_SERVICE_HTTP_PORT=8084
+# Copy the example file
+cp .env.example .env
 
-# Database
+# Edit with your configuration
+nano .env
+```
+
+2. **For Docker Deployment**:
+```bash
+# Option 1: Mount .env file
+docker run -v $(pwd)/.env:/root/.env notification-service
+
+# Option 2: Pass environment variables directly
+docker run -e MONGODB_URI=mongodb://mongo:27017 \
+           -e RABBITMQ_URL=amqp://rabbitmq:5672/ \
+           notification-service
+```
+
+3. **For Kubernetes**:
+```yaml
+# Use ConfigMap and Secrets
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-config
+data:
+  NOTIFICATION_SERVICE_PORT: "8084"
+  MONGODB_URI: "mongodb://mongo:27017"
+  # ... other non-sensitive values
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: notification-secrets
+type: Opaque
+stringData:
+  SMTP_PASSWORD: "your-password"
+  TWILIO_TOKEN: "your-token"
+  # ... other sensitive values
+```
+
+### Complete Environment Variable Reference
+
+#### Server Configuration
+```bash
+# HTTP server port
+NOTIFICATION_SERVICE_PORT=8084
+
+#### Database Configuration
+```bash
+# MongoDB connection string
+# Format: mongodb://[username:password@]host[:port]/[defaultAuthDB]
 MONGODB_URI=mongodb://localhost:27017
-MONGODB_DATABASE=saas_framework
 
-# RabbitMQ
+# Database name
+MONGODB_DATABASE=notification_service
+```
+
+#### Message Queue Configuration
+```bash
+# RabbitMQ connection URL
+# Format: amqp://[username:password@]host[:port]/[vhost]
 RABBITMQ_URL=amqp://guest:guest@localhost:5672/
+```
 
-# SMTP
-SMTP_HOST=smtp.example.com
+#### SMTP Configuration
+```bash
+# SMTP server hostname
+SMTP_HOST=smtp.gmail.com
+
+# SMTP server port (usually 587 for TLS, 465 for SSL, 25 for unencrypted)
 SMTP_PORT=587
-SMTP_USER=noreply@example.com
-SMTP_PASSWORD=your-password
-SMTP_FROM=noreply@example.com
 
-# Logging
-LOG_LEVEL=info
+# SMTP authentication username
+SMTP_USERNAME=your-email@example.com
+
+# SMTP authentication password
+SMTP_PASSWORD=your-password
+
+# Sender email address
+SMTP_FROM_EMAIL=noreply@example.com
+
+# Sender display name
+SMTP_FROM_NAME=Notification Service
+
+# SMTP connection pool size (default: 10)
+SMTP_POOL_SIZE=10
+```
+
+#### Email Processing Configuration
+```bash
+# Number of concurrent workers for processing bulk emails (default: 5)
+EMAIL_WORKERS=5
+```
+
+#### SMS Configuration
+```bash
+# SMS provider: 'twilio' or 'sns'
+SMS_PROVIDER=twilio
+
+# Twilio Configuration (when SMS_PROVIDER=twilio)
+TWILIO_SID=your-twilio-account-sid
+TWILIO_TOKEN=your-twilio-auth-token
+TWILIO_FROM=+1234567890
+
+# AWS SNS Configuration (when SMS_PROVIDER=sns)
+AWS_SNS_ARN=arn:aws:sns:us-east-1:123456789012:your-topic
+AWS_REGION=us-east-1
+```
+
+#### Rate Limiting Configuration
+```bash
+# Maximum requests per second per tenant (default: 100)
+RATE_LIMIT_PER_TENANT=100
+
+# Maximum burst size for rate limiting (default: 200)
+RATE_LIMIT_BURST=200
+```
+
+### Configuration Precedence
+
+Environment variables are loaded in the following order (highest to lowest priority):
+1. **System environment variables** - Set at the OS level
+2. **`.env` file** - Loaded from the application root directory
+3. **Default values** - Hardcoded defaults in the application
+
+### Security Best Practices
+
+⚠️ **Important Security Notes**:
+- **Never commit `.env` files** to version control
+- The `.env` file is already in `.gitignore` to prevent accidental commits
+- Use `.env.example` as a template - it contains no sensitive data
+- In production, prefer system environment variables or secret management systems (AWS Secrets Manager, HashiCorp Vault, Kubernetes Secrets)
+- Rotate credentials regularly
+- Use different credentials for different environments (dev, staging, production)
+
+### Default Values
+
+If an environment variable is not set, the application uses these defaults:
+
+| Variable | Default Value |
+|----------|--------------|
+| NOTIFICATION_SERVICE_PORT | 8084 |
+| MONGODB_URI | mongodb://localhost:27017 |
+| MONGODB_DATABASE | notification_service |
+| RABBITMQ_URL | amqp://guest:guest@localhost:5672/ |
+| SMTP_HOST | smtp.gmail.com |
+| SMTP_PORT | 587 |
+| SMTP_FROM_EMAIL | noreply@example.com |
+| SMTP_FROM_NAME | Notification Service |
+| SMTP_POOL_SIZE | 10 |
+| EMAIL_WORKERS | 5 |
+| SMS_PROVIDER | twilio |
+| RATE_LIMIT_PER_TENANT | 100 |
+| RATE_LIMIT_BURST | 200 |
+
+### Troubleshooting
+
+**Problem**: Application not loading `.env` file
+- **Solution**: Ensure `.env` file is in the same directory as the running application
+- **Note**: The application will NOT fail if `.env` is missing - it will use system environment variables
+
+**Problem**: Environment variables not being recognized
+- **Solution**: Check variable names for typos and ensure no extra spaces
+- **Solution**: Verify the `.env` file format (KEY=value, no spaces around =)
+
+**Problem**: Sensitive data exposed in logs
+- **Solution**: Never log environment variable values
+- **Solution**: Review application logs to ensure passwords/tokens are not printed
 ```
 
 ## Database Schema
