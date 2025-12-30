@@ -29,14 +29,16 @@ import (
 
 func main() {
 	// Load .env file
-	if err := godotenv.Load(); err != nil {
-		// Don't fail if .env file is not found - use system environment variables
-		// This is intentional for backward compatibility and deployment flexibility
-	}
+	envErr := godotenv.Load()
 
 	// Initialize logger
 	log := logger.NewLogger()
 	defer log.Sync()
+
+	// Log .env loading status
+	if envErr != nil {
+		log.Warn("No .env file found or error loading .env file", "error", envErr)
+	}
 
 	log.Info("Starting Notification Service...")
 
