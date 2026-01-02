@@ -24,7 +24,18 @@ func NewNotificationHandler(service *service.NotificationService, log *logger.Lo
 	}
 }
 
-// SendEmail handles email notification requests
+// SendEmail godoc
+// @Summary Send email notification
+// @Description Send an email notification to recipients
+// @Tags notifications
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param email body object true "Email request"
+// @Success 200 {object} map[string]interface{} "Email sent successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/notifications/email [post]
 func (h *NotificationHandler) SendEmail(c *gin.Context) {
 	var req domain.SendEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -43,7 +54,18 @@ func (h *NotificationHandler) SendEmail(c *gin.Context) {
 	})
 }
 
-// SendWebhook handles webhook notification requests
+// SendWebhook godoc
+// @Summary Send webhook notification
+// @Description Send a webhook notification to a specified URL
+// @Tags notifications
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param webhook body object true "Webhook request"
+// @Success 200 {object} map[string]interface{} "Webhook sent successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/notifications/webhook [post]
 func (h *NotificationHandler) SendWebhook(c *gin.Context) {
 	var req domain.SendWebhookRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -62,7 +84,17 @@ func (h *NotificationHandler) SendWebhook(c *gin.Context) {
 	})
 }
 
-// GetNotifications retrieves notification history
+// GetNotifications godoc
+// @Summary Get notifications
+// @Description Get list of notifications with pagination
+// @Tags notifications
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Success 200 {object} map[string]interface{} "List of notifications"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/notifications [get]
 func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 	var req domain.GetNotificationsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -85,7 +117,18 @@ func (h *NotificationHandler) GetNotifications(c *gin.Context) {
 	})
 }
 
-// GetNotification retrieves a single notification by ID
+// GetNotification godoc
+// @Summary Get notification by ID
+// @Description Get details of a specific notification
+// @Tags notifications
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param id path string true "Notification ID"
+// @Success 200 {object} map[string]interface{} "Notification details"
+// @Failure 404 {object} map[string]interface{} "Notification not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/notifications/{id} [get]
 func (h *NotificationHandler) GetNotification(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {

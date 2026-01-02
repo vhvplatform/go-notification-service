@@ -24,7 +24,18 @@ func NewPreferencesHandler(repo *repository.PreferencesRepository, log *logger.L
 	}
 }
 
-// GetPreferences retrieves user notification preferences
+// GetPreferences godoc
+// @Summary Get user notification preferences
+// @Description Get notification preferences for a user
+// @Tags preferences
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param user_id path string true "User ID"
+// @Success 200 {object} map[string]interface{} "User preferences"
+// @Failure 404 {object} map[string]interface{} "Preferences not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/preferences/{user_id} [get]
 func (h *PreferencesHandler) GetPreferences(c *gin.Context) {
 	tenantID := c.Query("tenant_id")
 	userID := c.Param("user_id")
@@ -44,7 +55,19 @@ func (h *PreferencesHandler) GetPreferences(c *gin.Context) {
 	c.JSON(http.StatusOK, prefs)
 }
 
-// UpdatePreferences updates user notification preferences
+// UpdatePreferences godoc
+// @Summary Update user notification preferences
+// @Description Update notification preferences for a user
+// @Tags preferences
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param user_id path string true "User ID"
+// @Param preferences body object true "Preferences update"
+// @Success 200 {object} map[string]interface{} "Preferences updated"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/preferences/{user_id} [put]
 func (h *PreferencesHandler) UpdatePreferences(c *gin.Context) {
 	userID := c.Param("user_id")
 

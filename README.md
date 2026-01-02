@@ -295,6 +295,25 @@ make fmt
 
 ## API Documentation
 
+### Swagger Documentation
+
+Interactive API documentation is available via Swagger UI:
+
+**URL**: http://localhost:8084/swagger/index.html
+
+The Swagger UI provides:
+- Complete API endpoint documentation
+- Interactive testing of all endpoints
+- Request/response schemas
+- Authentication requirements
+- Example requests and responses
+
+To regenerate Swagger documentation after making changes:
+
+```bash
+make swagger
+```
+
 ### Endpoints
 
 #### Notifications
