@@ -12,6 +12,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/vhvplatform/go-notification-service/internal/consumer"
 	"github.com/vhvplatform/go-notification-service/internal/dlq"
 	"github.com/vhvplatform/go-notification-service/internal/handler"
@@ -24,7 +26,29 @@ import (
 	"github.com/vhvplatform/go-notification-service/internal/shared/mongodb"
 	"github.com/vhvplatform/go-notification-service/internal/shared/rabbitmq"
 	"github.com/vhvplatform/go-notification-service/internal/webhook"
+
+	_ "github.com/vhvplatform/go-notification-service/docs"
 )
+
+// @title Notification Service API
+// @version 1.0
+// @description Multi-channel Notification Service with Email, SMS, and Webhook support
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.vhvplatform.com/support
+// @contact.email support@vhvplatform.com
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8084
+// @BasePath /
+// @schemes http https
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 
 func main() {
 	// Initialize logger
@@ -139,6 +163,9 @@ func main() {
 
 	// Metrics endpoint
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
+
+	// Swagger endpoint
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// API routes with tenancy and rate limiting
 	v1 := router.Group("/api/v1")

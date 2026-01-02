@@ -67,13 +67,13 @@ func NewMongoClient(uri, database string) (*MongoClient, error) {
 	// Configure connection pool for better performance and security
 	clientOptions := options.Client().
 		ApplyURI(uri).
-		SetMaxPoolSize(100).       // Maximum connections in the pool
-		SetMinPoolSize(10).        // Minimum connections to maintain
-		SetMaxConnIdleTime(30 * time.Second). // Close idle connections after 30s
-		SetConnectTimeout(10 * time.Second).  // Connection timeout
+		SetMaxPoolSize(100).                         // Maximum connections in the pool
+		SetMinPoolSize(10).                          // Minimum connections to maintain
+		SetMaxConnIdleTime(30 * time.Second).        // Close idle connections after 30s
+		SetConnectTimeout(10 * time.Second).         // Connection timeout
 		SetServerSelectionTimeout(10 * time.Second). // Server selection timeout
-		SetRetryWrites(true).      // Enable retryable writes for better reliability
-		SetRetryReads(true)        // Enable retryable reads for better reliability
+		SetRetryWrites(true).                        // Enable retryable writes for better reliability
+		SetRetryReads(true)                          // Enable retryable reads for better reliability
 
 	// Enable TLS for production environments (if URI uses mongodb+srv or has tls=true)
 	if strings.Contains(uri, "mongodb+srv://") || strings.Contains(uri, "tls=true") || strings.Contains(uri, "ssl=true") {

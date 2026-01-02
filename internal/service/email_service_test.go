@@ -94,14 +94,14 @@ func BenchmarkApplyVariablesMultiple(b *testing.B) {
 // BenchmarkApplyVariablesLarge benchmarks replacement with many variables
 func BenchmarkApplyVariablesLarge(b *testing.B) {
 	service := &EmailService{}
-	
+
 	// Build a template with 20 variables
 	var templateBuilder strings.Builder
 	variables := make(map[string]string)
-	
+
 	templateBuilder.WriteString("Dear {{name}},\n\n")
 	variables["name"] = "John Doe"
-	
+
 	for i := 1; i <= 18; i++ {
 		key := "var" + string(rune('a'+i-1))
 		templateBuilder.WriteString("{{")
@@ -109,7 +109,7 @@ func BenchmarkApplyVariablesLarge(b *testing.B) {
 		templateBuilder.WriteString("}} ")
 		variables[key] = "value" + string(rune('a'+i-1))
 	}
-	
+
 	template := templateBuilder.String()
 
 	b.ResetTimer()
@@ -140,7 +140,7 @@ func TestContextTimeout(t *testing.T) {
 // TestEmailValidation tests email address validation
 func TestIsValidEmail(t *testing.T) {
 	service := &EmailService{}
-	
+
 	// Would need to initialize emailRegex in the service
 	// This is a placeholder to show the test pattern
 	tests := []struct {

@@ -30,7 +30,16 @@ func NewScheduleHandler(repo *repository.ScheduledNotificationRepository, schedu
 	}
 }
 
-// GetSchedules retrieves scheduled notifications
+// GetSchedules godoc
+// @Summary Get scheduled notifications
+// @Description Get list of scheduled notifications
+// @Tags scheduled
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Success 200 {object} map[string]interface{} "List of schedules"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/scheduled [get]
 func (h *ScheduleHandler) GetSchedules(c *gin.Context) {
 	tenantID := c.Query("tenant_id")
 	if tenantID == "" {
@@ -56,7 +65,18 @@ func (h *ScheduleHandler) GetSchedules(c *gin.Context) {
 	})
 }
 
-// CreateSchedule creates a new scheduled notification
+// CreateSchedule godoc
+// @Summary Create scheduled notification
+// @Description Create a new scheduled notification
+// @Tags scheduled
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param schedule body object true "Schedule request"
+// @Success 201 {object} map[string]interface{} "Schedule created"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/scheduled [post]
 func (h *ScheduleHandler) CreateSchedule(c *gin.Context) {
 	var sched domain.ScheduledNotification
 	if err := c.ShouldBindJSON(&sched); err != nil {
@@ -89,7 +109,20 @@ func (h *ScheduleHandler) CreateSchedule(c *gin.Context) {
 	})
 }
 
-// UpdateSchedule updates a scheduled notification
+// UpdateSchedule godoc
+// @Summary Update scheduled notification
+// @Description Update an existing scheduled notification
+// @Tags scheduled
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param id path string true "Schedule ID"
+// @Param schedule body object true "Schedule update"
+// @Success 200 {object} map[string]interface{} "Schedule updated"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 404 {object} map[string]interface{} "Schedule not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/scheduled/{id} [put]
 func (h *ScheduleHandler) UpdateSchedule(c *gin.Context) {
 	id := c.Param("id")
 
@@ -136,7 +169,18 @@ func (h *ScheduleHandler) UpdateSchedule(c *gin.Context) {
 	})
 }
 
-// DeleteSchedule deletes a scheduled notification
+// DeleteSchedule godoc
+// @Summary Delete scheduled notification
+// @Description Delete a scheduled notification
+// @Tags scheduled
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param id path string true "Schedule ID"
+// @Success 200 {object} map[string]interface{} "Schedule deleted"
+// @Failure 404 {object} map[string]interface{} "Schedule not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/scheduled/{id} [delete]
 func (h *ScheduleHandler) DeleteSchedule(c *gin.Context) {
 	id := c.Param("id")
 

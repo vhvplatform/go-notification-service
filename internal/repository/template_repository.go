@@ -19,9 +19,9 @@ const templatesCollection = "email_templates"
 
 // Security constants for cache
 const (
-	maxCacheSize     = 1000              // Maximum number of cached templates
-	maxCacheKeyLen   = 512               // Maximum length of cache key
-	maxTemplateSize  = 1024 * 1024       // Maximum template size: 1MB
+	maxCacheSize    = 1000        // Maximum number of cached templates
+	maxCacheKeyLen  = 512         // Maximum length of cache key
+	maxTemplateSize = 1024 * 1024 // Maximum template size: 1MB
 )
 
 // TemplateCache holds cached templates with security controls
@@ -245,7 +245,7 @@ func (r *TemplateRepository) Update(ctx context.Context, template *domain.EmailT
 	update := bson.M{"$set": template}
 
 	_, err := r.client.Collection(templatesCollection).UpdateOne(ctx, filter, update)
-	
+
 	// Invalidate cache entries
 	if err == nil {
 		r.cache.Invalidate("id:" + template.ID.Hex())
@@ -264,7 +264,7 @@ func (r *TemplateRepository) Delete(ctx context.Context, id string) error {
 
 	// Invalidate cache by ID (we know the ID)
 	r.cache.Invalidate("id:" + id)
-	
+
 	// Note: We cannot invalidate by tenant_id:name without fetching the template first.
 	// This is an acceptable trade-off as Delete operations are infrequent and cache entries
 	// will naturally expire based on TTL. Alternatively, we could maintain a reverse lookup

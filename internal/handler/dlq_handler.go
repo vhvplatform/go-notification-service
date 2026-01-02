@@ -27,7 +27,16 @@ func NewDLQHandler(dlq *dlq.DeadLetterQueue, service *service.NotificationServic
 	}
 }
 
-// GetFailedNotifications retrieves failed notifications from DLQ
+// GetFailedNotifications godoc
+// @Summary Get failed notifications
+// @Description Get list of failed notifications from DLQ
+// @Tags dlq
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Success 200 {object} map[string]interface{} "List of failed notifications"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/dlq [get]
 func (h *DLQHandler) GetFailedNotifications(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
@@ -47,7 +56,18 @@ func (h *DLQHandler) GetFailedNotifications(c *gin.Context) {
 	})
 }
 
-// RetryNotification retries a failed notification
+// RetryNotification godoc
+// @Summary Retry failed notification
+// @Description Retry sending a failed notification
+// @Tags dlq
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param id path string true "Notification ID"
+// @Success 200 {object} map[string]interface{} "Notification retried"
+// @Failure 404 {object} map[string]interface{} "Notification not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/dlq/{id}/retry [post]
 func (h *DLQHandler) RetryNotification(c *gin.Context) {
 	id := c.Param("id")
 

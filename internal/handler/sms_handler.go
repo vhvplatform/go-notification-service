@@ -24,7 +24,18 @@ func NewSMSHandler(service *service.NotificationService, log *logger.Logger) *SM
 	}
 }
 
-// SendSMS handles SMS notification requests
+// SendSMS godoc
+// @Summary Send SMS notification
+// @Description Send an SMS notification
+// @Tags notifications
+// @Accept json
+// @Produce json
+// @Param X-Tenant-ID header string true "Tenant ID"
+// @Param sms body object true "SMS request"
+// @Success 200 {object} map[string]interface{} "SMS sent successfully"
+// @Failure 400 {object} map[string]interface{} "Invalid request"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /api/v1/notifications/sms [post]
 func (h *SMSHandler) SendSMS(c *gin.Context) {
 	var req domain.SendSMSRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

@@ -20,12 +20,12 @@ import (
 
 // Security constants
 const (
-	maxEmailLength     = 320  // Maximum email address length per RFC 5321
-	maxSubjectLength   = 998  // Maximum subject line length per RFC 5322
+	maxEmailLength     = 320              // Maximum email address length per RFC 5321
+	maxSubjectLength   = 998              // Maximum subject line length per RFC 5322
 	maxBodyLength      = 10 * 1024 * 1024 // Maximum email body size: 10MB
-	maxRecipientsCount = 1000 // Maximum recipients per email
-	maxVariableKeyLen  = 256  // Maximum variable key length
-	maxVariableValLen  = 65536 // Maximum variable value length: 64KB
+	maxRecipientsCount = 1000             // Maximum recipients per email
+	maxVariableKeyLen  = 256              // Maximum variable key length
+	maxVariableValLen  = 65536            // Maximum variable value length: 64KB
 )
 
 // EmailConfig holds email service configuration
@@ -397,17 +397,17 @@ func (s *EmailService) isValidEmail(email string) bool {
 	if len(email) == 0 || len(email) > maxEmailLength {
 		return false
 	}
-	
+
 	// Check for null bytes and control characters
 	if strings.ContainsAny(email, "\x00\r\n") {
 		return false
 	}
-	
+
 	// Validate UTF-8 encoding
 	if !utf8.ValidString(email) {
 		return false
 	}
-	
+
 	// Apply regex validation
 	return s.emailRegex.MatchString(email)
 }
