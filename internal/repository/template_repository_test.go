@@ -78,10 +78,10 @@ func TestTemplateCacheSecurity(t *testing.T) {
 	cache := NewTemplateCache(5 * time.Minute)
 
 	tests := []struct {
-		name      string
-		key       string
-		template  *domain.EmailTemplate
-		wantErr   bool
+		name     string
+		key      string
+		template *domain.EmailTemplate
+		wantErr  bool
 	}{
 		{
 			name: "valid key",
