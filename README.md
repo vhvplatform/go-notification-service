@@ -2,6 +2,15 @@
 
 > Multi-channel notification service supporting Email, SMS, Push Notifications, and Webhooks
 
+## Repository Structure
+
+This repository is organized into the following main directories:
+
+- **[server/](./server/)** - Golang backend microservice for the notification service
+- **[client/](./client/)** - ReactJS frontend microservice (planned)
+- **[flutter/](./flutter/)** - Flutter mobile application (planned)
+- **[docs/](./docs/)** - Common project documentation
+
 ## Description
 
 A robust, scalable notification service built in Go that provides unified API for sending notifications across multiple channels. Features include template management, delivery tracking, retry mechanisms, rate limiting, and comprehensive monitoring.
@@ -53,7 +62,8 @@ A robust, scalable notification service built in Go that provides unified API fo
 git clone https://github.com/vhvplatform/go-notification-service.git
 cd go-notification-service
 
-# Install dependencies
+# Backend Setup (Go)
+cd server
 go mod download
 
 # Set up environment variables
@@ -74,7 +84,8 @@ make run
 git clone https://github.com/vhvplatform/go-notification-service.git
 cd go-notification-service
 
-# Install dependencies
+# Backend (Go)
+cd server
 go mod download
 ```
 
@@ -258,7 +269,8 @@ curl -X POST -H "X-Tenant-ID: tenant123" "http://localhost:8084/api/v1/dlq/notif
 ### Running Locally
 
 ```bash
-# Run the service
+# From the server directory
+cd server
 make run
 
 # Or with go run
@@ -268,7 +280,8 @@ go run cmd/main.go
 ### Running with Docker
 
 ```bash
-# Build and run
+# From the server directory
+cd server
 make docker-build
 make docker-run
 ```
@@ -276,6 +289,9 @@ make docker-run
 ### Running Tests
 
 ```bash
+# From the server directory
+cd server
+
 # Run all tests
 make test
 
@@ -286,6 +302,9 @@ make test-coverage
 ### Linting
 
 ```bash
+# From the server directory
+cd server
+
 # Run linters
 make lint
 
@@ -338,6 +357,7 @@ See full API documentation at [docs/API.md](docs/API.md).
 
 ```bash
 # Build image
+cd server
 docker build -t notification-service:latest .
 
 # Run container
@@ -355,7 +375,7 @@ docker run -d \
 version: '3.8'
 services:
   notification-service:
-    build: .
+    build: ./server
     ports:
       - "8084:8084"
     environment:
@@ -434,23 +454,30 @@ groups:
 The service follows a clean architecture pattern with clear separation of concerns:
 
 ```
-├── cmd/                    # Application entry point
-├── internal/
-│   ├── consumer/          # RabbitMQ event consumers
-│   ├── dlq/               # Dead Letter Queue implementation
-│   ├── domain/            # Domain models and entities
-│   ├── handler/           # HTTP request handlers
-│   ├── metrics/           # Prometheus metrics
-│   ├── middleware/        # HTTP middleware (rate limiting, etc.)
-│   ├── queue/             # Priority queue implementation
-│   ├── repository/        # Data access layer
-│   ├── scheduler/         # Cron-based scheduler
-│   ├── service/           # Business logic
-│   ├── shared/            # Shared utilities (logger, config, etc.)
-│   ├── smtp/              # SMTP connection pool
-│   └── webhook/           # Webhook handlers
-└── docs/
-    ├── diagrams/          # PlantUML architecture diagrams
+.
+├── server/                # Golang backend microservice
+│   ├── cmd/              # Application entry point
+│   ├── internal/
+│   │   ├── consumer/     # RabbitMQ event consumers
+│   │   ├── dlq/          # Dead Letter Queue implementation
+│   │   ├── domain/       # Domain models and entities
+│   │   ├── handler/      # HTTP request handlers
+│   │   ├── metrics/      # Prometheus metrics
+│   │   ├── middleware/   # HTTP middleware (rate limiting, etc.)
+│   │   ├── queue/        # Priority queue implementation
+│   │   ├── repository/   # Data access layer
+│   │   ├── scheduler/    # Cron-based scheduler
+│   │   ├── service/      # Business logic
+│   │   ├── shared/       # Shared utilities (logger, config, etc.)
+│   │   ├── smtp/         # SMTP connection pool
+│   │   └── webhook/      # Webhook handlers
+│   ├── Dockerfile
+│   ├── Makefile
+│   └── README.md
+├── client/               # ReactJS frontend (planned)
+├── flutter/              # Flutter mobile app (planned)
+└── docs/                 # Project documentation
+    ├── diagrams/         # PlantUML architecture diagrams
     ├── PROVIDER_INTEGRATION.md
     ├── TEMPLATE_BEST_PRACTICES.md
     └── TROUBLESHOOTING.md
