@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/vhvplatform/go-notification-service/internal/domain"
+	"github.com/vhvplatform/go-notification-service/internal/middleware"
 	"github.com/vhvplatform/go-notification-service/internal/repository"
 	"github.com/vhvplatform/go-notification-service/internal/shared/errors"
 	"github.com/vhvplatform/go-notification-service/internal/shared/logger"
@@ -26,17 +27,18 @@ func NewPreferencesHandler(repo *repository.PreferencesRepository, log *logger.L
 
 // GetPreferences retrieves user notification preferences
 func (h *PreferencesHandler) GetPreferences(c *gin.Context) {
-	tenantID := c.Query("tenant_id")
+	// Extract tenant_id from authenticated context
+	tenantID := middleware.MustGetTenantID(c)
 	userID := c.Param("user_id")
 
-	if tenantID == "" || userID == "" {
-		c.JSON(http.StatusBadRequest, errors.NewValidationError("tenant_id and user_id are required", nil))
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, errors.NewValidationError("user_id is required", nil))
 		return
 	}
 
 	prefs, err := h.repo.GetByUserID(c.Request.Context(), tenantID, userID)
 	if err != nil {
-		h.log.Error("Failed to get preferences", "error", err)
+		h.log.Error("Failed to get preferences", "error", err, "tenant_id", tenantID, "user_id", userID)
 		c.JSON(http.StatusInternalServerError, errors.NewInternalError("Failed to get preferences", err))
 		return
 	}
@@ -46,6 +48,8 @@ func (h *PreferencesHandler) GetPreferences(c *gin.Context) {
 
 // UpdatePreferences updates user notification preferences
 func (h *PreferencesHandler) UpdatePreferences(c *gin.Context) {
+	// Extract tenant_id from authenticated context
+	tenantID := middleware.MustGetTenantID(c)
 	userID := c.Param("user_id")
 
 	var prefs domain.NotificationPreferences
@@ -54,10 +58,12 @@ func (h *PreferencesHandler) UpdatePreferences(c *gin.Context) {
 		return
 	}
 
+	// Set tenant_id and user_id from authenticated context and URL param
+	prefs.TenantID = tenantID
 	prefs.UserID = userID
 
 	if err := h.repo.Update(c.Request.Context(), &prefs); err != nil {
-		h.log.Error("Failed to update preferences", "error", err)
+		h.log.Error("Failed to update preferences", "error", err, "tenant_id", tenantID, "user_id", userID)
 		c.JSON(http.StatusInternalServerError, errors.NewInternalError("Failed to update preferences", err))
 		return
 	}

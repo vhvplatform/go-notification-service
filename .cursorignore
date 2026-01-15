@@ -1,0 +1,34 @@
+# Dependency directories
+vendor/
+node_modules/
+
+# Build outputs
+bin/
+dist/
+*.exe
+*.so
+*.dll
+
+# Secrets and Sensitive data
+.env*
+*.pem
+*.key
+id_rsa
+secrets/
+
+# Auto-generated code (Nên ignore để AI tập trung vào file nguồn .proto)
+*.pb.go
+*.pb.validate.go
+*.pb.gw.go
+*.swagger.json
+
+# IDE and Logs
+.vscode/
+.idea/
+*.log
+logs/
+.DS_Store
+
+# Temporary / Cache
+.cache/
+tmp/

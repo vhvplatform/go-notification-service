@@ -48,22 +48,29 @@ func (r *ScheduledNotificationRepository) EnsureIndexes(ctx context.Context) err
 // Create creates a new scheduled notification
 func (r *ScheduledNotificationRepository) Create(ctx context.Context, scheduled *domain.ScheduledNotification) error {
 	scheduled.ID = primitive.NewObjectID()
+	scheduled.Version = 1
 	scheduled.CreatedAt = time.Now()
 	scheduled.UpdatedAt = time.Now()
+	scheduled.DeletedAt = nil
 
 	_, err := r.client.Collection(scheduledNotificationsCollection).InsertOne(ctx, scheduled)
 	return err
 }
 
-// FindByID finds a scheduled notification by ID
-func (r *ScheduledNotificationRepository) FindByID(ctx context.Context, id string) (*domain.ScheduledNotification, error) {
+// FindByID finds a scheduled notification by ID with tenant isolation
+func (r *ScheduledNotificationRepository) FindByID(ctx context.Context, id string, tenantID string) (*domain.ScheduledNotification, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
 	var scheduled domain.ScheduledNotification
-	err = r.client.Collection(scheduledNotificationsCollection).FindOne(ctx, bson.M{"_id": objectID}).Decode(&scheduled)
+	filter := bson.M{
+		"_id":       objectID,
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}
+	err = r.client.Collection(scheduledNotificationsCollection).FindOne(ctx, filter).Decode(&scheduled)
 	if err != nil {
 		return nil, err
 	}
@@ -71,9 +78,12 @@ func (r *ScheduledNotificationRepository) FindByID(ctx context.Context, id strin
 	return &scheduled, nil
 }
 
-// FindActive finds all active scheduled notifications
+// FindActive finds all active scheduled notifications (not soft deleted)
 func (r *ScheduledNotificationRepository) FindActive(ctx context.Context) ([]*domain.ScheduledNotification, error) {
-	filter := bson.M{"isActive": true}
+	filter := bson.M{
+		"isActive":  true,
+		"deletedAt": nil,
+	}
 	cursor, err := r.client.Collection(scheduledNotificationsCollection).Find(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -90,7 +100,10 @@ func (r *ScheduledNotificationRepository) FindActive(ctx context.Context) ([]*do
 
 // FindByTenantID finds scheduled notifications by tenant ID with optimized pagination
 func (r *ScheduledNotificationRepository) FindByTenantID(ctx context.Context, tenantID string, page, pageSize int) ([]*domain.ScheduledNotification, int64, error) {
-	filter := bson.M{"tenantId": tenantID}
+	filter := bson.M{
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}
 
 	// Calculate pagination
 	skip := (page - 1) * pageSize

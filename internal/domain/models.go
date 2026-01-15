@@ -42,31 +42,33 @@ const (
 
 // Notification represents a notification record
 type Notification struct {
-	ID              primitive.ObjectID   `json:"id" bson:"_id,omitempty"`
-	TenantID        string               `json:"tenant_id" bson:"tenantId"`
-	Type            NotificationType     `json:"type" bson:"type"`
-	Status          NotificationStatus   `json:"status" bson:"status"`
-	Priority        NotificationPriority `json:"priority" bson:"priority"`
-	Recipient       string               `json:"recipient" bson:"recipient"`
-	Subject         string               `json:"subject,omitempty" bson:"subject,omitempty"`
-	Body            string               `json:"body,omitempty" bson:"body,omitempty"`
-	Payload         map[string]any       `json:"payload,omitempty" bson:"payload,omitempty"`
-	Error           string               `json:"error,omitempty" bson:"error,omitempty"`
-	RetryCount      int                  `json:"retry_count" bson:"retryCount"`
-	IdempotencyKey  string               `json:"idempotency_key,omitempty" bson:"idempotencyKey,omitempty"`
-	Tags            []string             `json:"tags,omitempty" bson:"tags,omitempty"`
-	Category        string               `json:"category,omitempty" bson:"category,omitempty"`
-	GroupID         string               `json:"group_id,omitempty" bson:"groupId,omitempty"`
-	ParentID        string               `json:"parent_id,omitempty" bson:"parentId,omitempty"`
-	Metadata        map[string]string    `json:"metadata,omitempty" bson:"metadata,omitempty"`
-	SentAt          *time.Time           `json:"sent_at,omitempty" bson:"sentAt,omitempty"`
-	DeliveredAt     *time.Time           `json:"delivered_at,omitempty" bson:"deliveredAt,omitempty"`
-	ReadAt          *time.Time           `json:"read_at,omitempty" bson:"readAt,omitempty"`
-	ClickedAt       *time.Time           `json:"clicked_at,omitempty" bson:"clickedAt,omitempty"`
-	ExpiresAt       *time.Time           `json:"expires_at,omitempty" bson:"expiresAt,omitempty"`
-	ScheduledFor    *time.Time           `json:"scheduled_for,omitempty" bson:"scheduledFor,omitempty"`
-	CreatedAt       time.Time            `json:"created_at" bson:"createdAt"`
-	UpdatedAt       time.Time            `json:"updated_at" bson:"updatedAt"`
+	ID             primitive.ObjectID   `json:"id" bson:"_id,omitempty"`
+	TenantID       string               `json:"tenant_id" bson:"tenantId"`
+	Type           NotificationType     `json:"type" bson:"type"`
+	Status         NotificationStatus   `json:"status" bson:"status"`
+	Priority       NotificationPriority `json:"priority" bson:"priority"`
+	Recipient      string               `json:"recipient" bson:"recipient"`
+	Subject        string               `json:"subject,omitempty" bson:"subject,omitempty"`
+	Body           string               `json:"body,omitempty" bson:"body,omitempty"`
+	Payload        map[string]any       `json:"payload,omitempty" bson:"payload,omitempty"`
+	Error          string               `json:"error,omitempty" bson:"error,omitempty"`
+	RetryCount     int                  `json:"retry_count" bson:"retryCount"`
+	IdempotencyKey string               `json:"idempotency_key,omitempty" bson:"idempotencyKey,omitempty"`
+	Tags           []string             `json:"tags,omitempty" bson:"tags,omitempty"`
+	Category       string               `json:"category,omitempty" bson:"category,omitempty"`
+	GroupID        string               `json:"group_id,omitempty" bson:"groupId,omitempty"`
+	ParentID       string               `json:"parent_id,omitempty" bson:"parentId,omitempty"`
+	Metadata       map[string]string    `json:"metadata,omitempty" bson:"metadata,omitempty"`
+	SentAt         *time.Time           `json:"sent_at,omitempty" bson:"sentAt,omitempty"`
+	DeliveredAt    *time.Time           `json:"delivered_at,omitempty" bson:"deliveredAt,omitempty"`
+	ReadAt         *time.Time           `json:"read_at,omitempty" bson:"readAt,omitempty"`
+	ClickedAt      *time.Time           `json:"clicked_at,omitempty" bson:"clickedAt,omitempty"`
+	ExpiresAt      *time.Time           `json:"expires_at,omitempty" bson:"expiresAt,omitempty"`
+	ScheduledFor   *time.Time           `json:"scheduled_for,omitempty" bson:"scheduledFor,omitempty"`
+	Version        int                  `json:"version" bson:"version"`
+	CreatedAt      time.Time            `json:"created_at" bson:"createdAt"`
+	UpdatedAt      time.Time            `json:"updated_at" bson:"updatedAt"`
+	DeletedAt      *time.Time           `json:"deleted_at,omitempty" bson:"deletedAt,omitempty"`
 }
 
 // EmailTemplate represents an email template
@@ -78,8 +80,10 @@ type EmailTemplate struct {
 	Body      string             `json:"body" bson:"body"`
 	IsHTML    bool               `json:"is_html" bson:"isHtml"`
 	Variables []string           `json:"variables,omitempty" bson:"variables,omitempty"`
+	Version   int                `json:"version" bson:"version"`
 	CreatedAt time.Time          `json:"created_at" bson:"createdAt"`
 	UpdatedAt time.Time          `json:"updated_at" bson:"updatedAt"`
+	DeletedAt *time.Time         `json:"deleted_at,omitempty" bson:"deletedAt,omitempty"`
 }
 
 // EventType represents the type of event
@@ -115,15 +119,22 @@ type FailedNotification struct {
 	Error      string             `json:"error" bson:"error"`
 	FailedAt   time.Time          `json:"failed_at" bson:"failedAt"`
 	RetryCount int                `json:"retry_count" bson:"retryCount"`
+	Version    int                `json:"version" bson:"version"`
 	CreatedAt  time.Time          `json:"created_at" bson:"createdAt"`
+	UpdatedAt  time.Time          `json:"updated_at" bson:"updatedAt"`
+	DeletedAt  *time.Time         `json:"deleted_at,omitempty" bson:"deletedAt,omitempty"`
 }
 
 // EmailBounce represents an email bounce record
 type EmailBounce struct {
 	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	TenantID  string             `json:"tenant_id" bson:"tenantId"`
 	Email     string             `json:"email" bson:"email"`
 	Type      string             `json:"type" bson:"type"` // hard, soft, complaint
 	Reason    string             `json:"reason" bson:"reason"`
 	Timestamp time.Time          `json:"timestamp" bson:"timestamp"`
+	Version   int                `json:"version" bson:"version"`
 	CreatedAt time.Time          `json:"created_at" bson:"createdAt"`
+	UpdatedAt time.Time          `json:"updated_at" bson:"updatedAt"`
+	DeletedAt *time.Time         `json:"deleted_at,omitempty" bson:"deletedAt,omitempty"`
 }

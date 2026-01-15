@@ -16,12 +16,16 @@ const notificationsCollection = "notifications"
 
 // NotificationRepository handles notification data operations
 type NotificationRepository struct {
-	client *mongodb.MongoClient
+	client     *mongodb.MongoClient
+	outboxRepo *OutboxEventRepository
 }
 
 // NewNotificationRepository creates a new notification repository
-func NewNotificationRepository(client *mongodb.MongoClient) *NotificationRepository {
-	return &NotificationRepository{client: client}
+func NewNotificationRepository(client *mongodb.MongoClient, outboxRepo *OutboxEventRepository) *NotificationRepository {
+	return &NotificationRepository{
+		client:     client,
+		outboxRepo: outboxRepo,
+	}
 }
 
 // EnsureIndexes creates necessary indexes for optimal query performance
@@ -128,25 +132,63 @@ func (r *NotificationRepository) EnsureIndexes(ctx context.Context) error {
 	return r.client.CreateIndexes(ctx, notificationsCollection, indexes)
 }
 
-// Create creates a new notification
+// Create creates a new notification with transactional outbox event
+// CRITICAL: Both notification and outbox event are written atomically
 func (r *NotificationRepository) Create(ctx context.Context, notification *domain.Notification) error {
 	notification.ID = primitive.NewObjectID()
-	notification.CreatedAt = time.Now()
-	notification.UpdatedAt = time.Now()
+	notification.Version = 1
+	now := time.Now()
+	notification.CreatedAt = now
+	notification.UpdatedAt = now
+	notification.DeletedAt = nil
 
-	_, err := r.client.Collection(notificationsCollection).InsertOne(ctx, notification)
+	// If outbox repository is not set, use simple insert (backward compatibility)
+	if r.outboxRepo == nil {
+		_, err := r.client.Collection(notificationsCollection).InsertOne(ctx, notification)
+		return err
+	}
+
+	// Start MongoDB transaction for atomic write
+	session, err := r.client.GetClient().StartSession()
+	if err != nil {
+		return err
+	}
+	defer session.EndSession(ctx)
+
+	// Execute transaction
+	_, err = session.WithTransaction(ctx, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		// 1. Insert notification
+		_, err := r.client.Collection(notificationsCollection).InsertOne(sessCtx, notification)
+		if err != nil {
+			return nil, err
+		}
+
+		// 2. Create outbox event
+		event := r.createNotificationCreatedEvent(ctx, notification)
+		if err := r.outboxRepo.CreateWithSession(ctx, sessCtx, event); err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	})
+
 	return err
 }
 
-// FindByID finds a notification by ID
-func (r *NotificationRepository) FindByID(ctx context.Context, id string) (*domain.Notification, error) {
+// FindByID finds a notification by ID with tenant isolation
+func (r *NotificationRepository) FindByID(ctx context.Context, id string, tenantID string) (*domain.Notification, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
 	var notification domain.Notification
-	err = r.client.Collection(notificationsCollection).FindOne(ctx, bson.M{"_id": objectID}).Decode(&notification)
+	filter := bson.M{
+		"_id":       objectID,
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}
+	err = r.client.Collection(notificationsCollection).FindOne(ctx, filter).Decode(&notification)
 	if err != nil {
 		return nil, err
 	}
@@ -154,21 +196,69 @@ func (r *NotificationRepository) FindByID(ctx context.Context, id string) (*doma
 	return &notification, nil
 }
 
-// Update updates a notification
+// Update updates a notification with tenant isolation and optimistic locking
 func (r *NotificationRepository) Update(ctx context.Context, notification *domain.Notification) error {
 	notification.UpdatedAt = time.Now()
+	notification.Version++
 
-	filter := bson.M{"_id": notification.ID}
+	filter := bson.M{
+		"_id":       notification.ID,
+		"tenantId":  notification.TenantID,
+		"deletedAt": nil,
+		"version":   notification.Version - 1, // Optimistic locking
+	}
 	update := bson.M{"$set": notification}
 
-	_, err := r.client.Collection(notificationsCollection).UpdateOne(ctx, filter, update)
+	// If outbox repository is not set, use simple update (backward compatibility)
+	if r.outboxRepo == nil {
+		result, err := r.client.Collection(notificationsCollection).UpdateOne(ctx, filter, update)
+		if err != nil {
+			return err
+		}
+		if result.MatchedCount == 0 {
+			return mongo.ErrNoDocuments
+		}
+		return nil
+	}
+
+	// Start MongoDB transaction for atomic write
+	session, err := r.client.GetClient().StartSession()
+	if err != nil {
+		return err
+	}
+	defer session.EndSession(ctx)
+
+	// Execute transaction
+	_, err = session.WithTransaction(ctx, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		// 1. Update notification
+		result, err := r.client.Collection(notificationsCollection).UpdateOne(sessCtx, filter, update)
+		if err != nil {
+			return nil, err
+		}
+		if result.MatchedCount == 0 {
+			return nil, mongo.ErrNoDocuments
+		}
+
+		// 2. Create outbox event
+		updatedFields := []string{"subject", "body", "metadata"} // TODO: Track actual changed fields
+		event := r.createNotificationUpdatedEvent(ctx, notification, updatedFields)
+		if err := r.outboxRepo.CreateWithSession(ctx, sessCtx, event); err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	})
+
 	return err
 }
 
 // FindByTenantID finds notifications by tenant ID with pagination
 // Uses aggregation pipeline for better performance with count
 func (r *NotificationRepository) FindByTenantID(ctx context.Context, tenantID string, notificationType domain.NotificationType, status domain.NotificationStatus, page, pageSize int) ([]*domain.Notification, int64, error) {
-	matchStage := bson.M{"tenantId": tenantID}
+	matchStage := bson.M{
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}
 
 	if notificationType != "" {
 		matchStage["type"] = notificationType
@@ -223,11 +313,24 @@ func (r *NotificationRepository) FindByTenantID(ctx context.Context, tenantID st
 	return results[0].Data, total, nil
 }
 
-// UpdateStatus updates the status of a notification
-func (r *NotificationRepository) UpdateStatus(ctx context.Context, id string, status domain.NotificationStatus, errorMsg string, sentAt *time.Time) error {
+// UpdateStatus updates the status of a notification with tenant isolation
+func (r *NotificationRepository) UpdateStatus(ctx context.Context, id string, tenantID string, status domain.NotificationStatus, errorMsg string, sentAt *time.Time) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
+	}
+
+	// Fetch current notification to get old status
+	var currentNotif domain.Notification
+	if r.outboxRepo != nil {
+		err := r.client.Collection(notificationsCollection).FindOne(ctx, bson.M{
+			"_id":       objectID,
+			"tenantId":  tenantID,
+			"deletedAt": nil,
+		}).Decode(&currentNotif)
+		if err != nil {
+			return err
+		}
 	}
 
 	update := bson.M{
@@ -235,6 +338,7 @@ func (r *NotificationRepository) UpdateStatus(ctx context.Context, id string, st
 			"status":    status,
 			"updatedAt": time.Now(),
 		},
+		"$inc": bson.M{"version": 1},
 	}
 
 	if errorMsg != "" {
@@ -245,21 +349,64 @@ func (r *NotificationRepository) UpdateStatus(ctx context.Context, id string, st
 		update["$set"].(bson.M)["sentAt"] = sentAt
 	}
 
-	filter := bson.M{"_id": objectID}
-	_, err = r.client.Collection(notificationsCollection).UpdateOne(ctx, filter, update)
+	filter := bson.M{
+		"_id":       objectID,
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}
+
+	// If outbox repository is not set, use simple update
+	if r.outboxRepo == nil {
+		_, err = r.client.Collection(notificationsCollection).UpdateOne(ctx, filter, update)
+		return err
+	}
+
+	// Start MongoDB transaction
+	session, err := r.client.GetClient().StartSession()
+	if err != nil {
+		return err
+	}
+	defer session.EndSession(ctx)
+
+	// Execute transaction
+	_, err = session.WithTransaction(ctx, func(sessCtx mongo.SessionContext) (interface{}, error) {
+		// 1. Update status
+		_, err := r.client.Collection(notificationsCollection).UpdateOne(sessCtx, filter, update)
+		if err != nil {
+			return nil, err
+		}
+
+		// 2. Create outbox event for status change
+		currentNotif.Status = status
+		currentNotif.UpdatedAt = time.Now()
+		event := r.createNotificationStatusChangedEvent(ctx, &currentNotif, currentNotif.Status)
+		if err := r.outboxRepo.CreateWithSession(ctx, sessCtx, event); err != nil {
+			return nil, err
+		}
+
+		return nil, nil
+	})
+
 	return err
 }
 
-// IncrementRetryCount increments the retry count of a notification
-func (r *NotificationRepository) IncrementRetryCount(ctx context.Context, id string) error {
+// IncrementRetryCount increments the retry count of a notification with tenant isolation
+func (r *NotificationRepository) IncrementRetryCount(ctx context.Context, id string, tenantID string) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
 
-	filter := bson.M{"_id": objectID}
+	filter := bson.M{
+		"_id":       objectID,
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}
 	update := bson.M{
-		"$inc": bson.M{"retryCount": 1},
+		"$inc": bson.M{
+			"retryCount": 1,
+			"version":    1,
+		},
 		"$set": bson.M{"updatedAt": time.Now()},
 	}
 
@@ -277,8 +424,10 @@ func (r *NotificationRepository) CreateBatch(ctx context.Context, notifications 
 	documents := make([]interface{}, len(notifications))
 	for i, notification := range notifications {
 		notification.ID = primitive.NewObjectID()
+		notification.Version = 1
 		notification.CreatedAt = now
 		notification.UpdatedAt = now
+		notification.DeletedAt = nil
 		documents[i] = notification
 	}
 
@@ -286,10 +435,14 @@ func (r *NotificationRepository) CreateBatch(ctx context.Context, notifications 
 	return err
 }
 
-// FindByIdempotencyKey finds a notification by idempotency key
-func (r *NotificationRepository) FindByIdempotencyKey(ctx context.Context, idempotencyKey string) (*domain.Notification, error) {
+// FindByIdempotencyKey finds a notification by idempotency key with tenant isolation
+func (r *NotificationRepository) FindByIdempotencyKey(ctx context.Context, tenantID, idempotencyKey string) (*domain.Notification, error) {
 	var notification domain.Notification
-	filter := bson.M{"idempotencyKey": idempotencyKey}
+	filter := bson.M{
+		"tenantId":       tenantID,
+		"idempotencyKey": idempotencyKey,
+		"deletedAt":      nil,
+	}
 	err := r.client.Collection(notificationsCollection).FindOne(ctx, filter).Decode(&notification)
 	if err != nil {
 		return nil, err
@@ -297,8 +450,8 @@ func (r *NotificationRepository) FindByIdempotencyKey(ctx context.Context, idemp
 	return &notification, nil
 }
 
-// UpdateDeliveryStatus updates delivery status with timestamp
-func (r *NotificationRepository) UpdateDeliveryStatus(ctx context.Context, id string, status domain.NotificationStatus, timestamp time.Time) error {
+// UpdateDeliveryStatus updates delivery status with timestamp and tenant isolation
+func (r *NotificationRepository) UpdateDeliveryStatus(ctx context.Context, id string, tenantID string, status domain.NotificationStatus, timestamp time.Time) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
@@ -309,6 +462,7 @@ func (r *NotificationRepository) UpdateDeliveryStatus(ctx context.Context, id st
 			"status":    status,
 			"updatedAt": time.Now(),
 		},
+		"$inc": bson.M{"version": 1},
 	}
 
 	// Set appropriate timestamp based on status
@@ -323,16 +477,21 @@ func (r *NotificationRepository) UpdateDeliveryStatus(ctx context.Context, id st
 		update["$set"].(bson.M)["clickedAt"] = timestamp
 	}
 
-	filter := bson.M{"_id": objectID}
+	filter := bson.M{
+		"_id":       objectID,
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}
 	_, err = r.client.Collection(notificationsCollection).UpdateOne(ctx, filter, update)
 	return err
 }
 
-// FindByGroupID finds notifications by group ID
+// FindByGroupID finds notifications by group ID with tenant isolation
 func (r *NotificationRepository) FindByGroupID(ctx context.Context, tenantID, groupID string, page, pageSize int) ([]*domain.Notification, int64, error) {
 	filter := bson.M{
-		"tenantId": tenantID,
-		"groupId":  groupID,
+		"tenantId":  tenantID,
+		"groupId":   groupID,
+		"deletedAt": nil,
 	}
 
 	skip := (page - 1) * pageSize
@@ -379,11 +538,12 @@ func (r *NotificationRepository) FindByGroupID(ctx context.Context, tenantID, gr
 	return results[0].Data, total, nil
 }
 
-// FindByCategory finds notifications by category
+// FindByCategory finds notifications by category with tenant isolation
 func (r *NotificationRepository) FindByCategory(ctx context.Context, tenantID, category string, page, pageSize int) ([]*domain.Notification, int64, error) {
 	filter := bson.M{
-		"tenantId": tenantID,
-		"category": category,
+		"tenantId":  tenantID,
+		"category":  category,
+		"deletedAt": nil,
 	}
 
 	skip := (page - 1) * pageSize
@@ -430,11 +590,13 @@ func (r *NotificationRepository) FindByCategory(ctx context.Context, tenantID, c
 	return results[0].Data, total, nil
 }
 
-// FindByTags finds notifications by tags
+// FindByTags finds notifications by tags with tenant isolation
 func (r *NotificationRepository) FindByTags(ctx context.Context, tenantID string, tags []string, page, pageSize int) ([]*domain.Notification, int64, error) {
 	filter := bson.M{
-		"tenantId": tenantID,
-		"tags":     bson.M{"$in": tags},
+		"tenantId":  tenantID,
+		"tags":      bson.M{"$in": tags},
+		"deletedAt": nil,
+	}
 	}
 
 	skip := (page - 1) * pageSize
@@ -479,4 +641,225 @@ func (r *NotificationRepository) FindByTags(ctx context.Context, tenantID string
 	}
 
 	return results[0].Data, total, nil
+}
+
+// SoftDelete marks a notification as deleted (soft delete) with tenant isolation
+func (r *NotificationRepository) SoftDelete(ctx context.Context, id string, tenantID string) error {
+objectID, err := primitive.ObjectIDFromHex(id)
+if err != nil {
+return err
+}
+
+// Fetch notification before deletion to create event
+var notification domain.Notification
+if r.outboxRepo != nil {
+	err := r.client.Collection(notificationsCollection).FindOne(ctx, bson.M{
+		"_id":       objectID,
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}).Decode(&notification)
+	if err != nil {
+		return err
+	}
+}
+
+now := time.Now()
+filter := bson.M{
+"_id":       objectID,
+"tenantId":  tenantID,
+"deletedAt": nil, // Only delete if not already deleted
+}
+update := bson.M{
+"$set": bson.M{
+"deletedAt": now,
+"updatedAt": now,
+},
+"$inc": bson.M{"version": 1},
+}
+
+// If outbox repository is not set, use simple update
+if r.outboxRepo == nil {
+	result, err := r.client.Collection(notificationsCollection).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return nil
+}
+
+// Start MongoDB transaction
+session, err := r.client.GetClient().StartSession()
+if err != nil {
+	return err
+}
+defer session.EndSession(ctx)
+
+// Execute transaction
+_, err = session.WithTransaction(ctx, func(sessCtx mongo.SessionContext) (interface{}, error) {
+	// 1. Soft delete notification
+	result, err := r.client.Collection(notificationsCollection).UpdateOne(sessCtx, filter, update)
+	if err != nil {
+		return nil, err
+	}
+	if result.MatchedCount == 0 {
+		return nil, mongo.ErrNoDocuments
+	}
+
+	// 2. Create outbox event for deletion
+	notification.DeletedAt = &now
+	event := r.createNotificationDeletedEvent(ctx, &notification)
+	if err := r.outboxRepo.CreateWithSession(ctx, sessCtx, event); err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+})
+
+return err
+}
+
+// Restore restores a soft-deleted notification with tenant isolation
+func (r *NotificationRepository) Restore(ctx context.Context, id string, tenantID string) error {
+objectID, err := primitive.ObjectIDFromHex(id)
+if err != nil {
+return err
+}
+
+filter := bson.M{
+"_id":      objectID,
+"tenantId": tenantID,
+"deletedAt": bson.M{"$ne": nil}, // Only restore if deleted
+}
+update := bson.M{
+"$set": bson.M{
+"deletedAt": nil,
+"updatedAt": time.Now(),
+},
+"$inc": bson.M{"version": 1},
+}
+
+result, err := r.client.Collection(notificationsCollection).UpdateOne(ctx, filter, update)
+if err != nil {
+return err
+}
+if result.MatchedCount == 0 {
+return mongo.ErrNoDocuments
+}
+return nil
+}
+
+// ============= Outbox Event Helpers (Phase 2: Transactional Outbox) =============
+
+// createNotificationCreatedEvent creates an outbox event for notification creation
+func (r *NotificationRepository) createNotificationCreatedEvent(ctx context.Context, notification *domain.Notification) *domain.OutboxEvent {
+	traceID, spanID := extractTraceContext(ctx)
+
+	payload := domain.NotificationCreatedPayload{
+		NotificationID: notification.ID.Hex(),
+		TenantID:       notification.TenantID,
+		Type:           notification.Type,
+		Recipient:      notification.Recipient,
+		Subject:        notification.Subject,
+		Status:         notification.Status,
+		CreatedAt:      notification.CreatedAt,
+	}
+
+	return &domain.OutboxEvent{
+		TenantID:      notification.TenantID,
+		AggregateType: "notification",
+		AggregateID:   notification.ID.Hex(),
+		EventType:     domain.EventNotificationCreated,
+		Payload:       payload,
+		TraceID:       traceID,
+		SpanID:        spanID,
+		Status:        domain.OutboxEventStatusPending,
+	}
+}
+
+// createNotificationStatusChangedEvent creates an outbox event for status change
+func (r *NotificationRepository) createNotificationStatusChangedEvent(ctx context.Context, notification *domain.Notification, oldStatus domain.NotificationStatus) *domain.OutboxEvent {
+	traceID, spanID := extractTraceContext(ctx)
+
+	payload := domain.NotificationStatusChangedPayload{
+		NotificationID: notification.ID.Hex(),
+		TenantID:       notification.TenantID,
+		OldStatus:      oldStatus,
+		NewStatus:      notification.Status,
+		ChangedAt:      notification.UpdatedAt,
+	}
+
+	return &domain.OutboxEvent{
+		TenantID:      notification.TenantID,
+		AggregateType: "notification",
+		AggregateID:   notification.ID.Hex(),
+		EventType:     domain.EventNotificationStatusChanged,
+		Payload:       payload,
+		TraceID:       traceID,
+		SpanID:        spanID,
+		Status:        domain.OutboxEventStatusPending,
+	}
+}
+
+// createNotificationUpdatedEvent creates an outbox event for notification update
+func (r *NotificationRepository) createNotificationUpdatedEvent(ctx context.Context, notification *domain.Notification, updatedFields []string) *domain.OutboxEvent {
+	traceID, spanID := extractTraceContext(ctx)
+
+	payload := domain.NotificationUpdatedPayload{
+		NotificationID: notification.ID.Hex(),
+		TenantID:       notification.TenantID,
+		Type:           notification.Type,
+		UpdatedFields:  updatedFields,
+		UpdatedAt:      notification.UpdatedAt,
+	}
+
+	return &domain.OutboxEvent{
+		TenantID:      notification.TenantID,
+		AggregateType: "notification",
+		AggregateID:   notification.ID.Hex(),
+		EventType:     domain.EventNotificationUpdated,
+		Payload:       payload,
+		TraceID:       traceID,
+		SpanID:        spanID,
+		Status:        domain.OutboxEventStatusPending,
+	}
+}
+
+// createNotificationDeletedEvent creates an outbox event for notification deletion
+func (r *NotificationRepository) createNotificationDeletedEvent(ctx context.Context, notification *domain.Notification) *domain.OutboxEvent {
+	traceID, spanID := extractTraceContext(ctx)
+
+	payload := domain.NotificationDeletedPayload{
+		NotificationID: notification.ID.Hex(),
+		TenantID:       notification.TenantID,
+		DeletedAt:      *notification.DeletedAt,
+	}
+
+	return &domain.OutboxEvent{
+		TenantID:      notification.TenantID,
+		AggregateType: "notification",
+		AggregateID:   notification.ID.Hex(),
+		EventType:     domain.EventNotificationDeleted,
+		Payload:       payload,
+		TraceID:       traceID,
+		SpanID:        spanID,
+		Status:        domain.OutboxEventStatusPending,
+	}
+}
+
+// extractTraceContext extracts OpenTelemetry trace ID and span ID from context
+// CRITICAL: This enables distributed tracing across services via Kafka events
+func extractTraceContext(ctx context.Context) (traceID string, spanID string) {
+	// TODO: Implement OpenTelemetry trace extraction when OpenTelemetry is integrated (Phase 3)
+	// For now, return empty strings (events will still be created, just without tracing)
+	//
+	// Example implementation (Phase 3):
+	// span := trace.SpanFromContext(ctx)
+	// if span.SpanContext().IsValid() {
+	//     traceID = span.SpanContext().TraceID().String()
+	//     spanID = span.SpanContext().SpanID().String()
+	// }
+	
+	return "", ""
 }

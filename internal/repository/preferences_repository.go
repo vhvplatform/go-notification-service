@@ -39,10 +39,14 @@ func (r *PreferencesRepository) EnsureIndexes(ctx context.Context) error {
 	return r.client.CreateIndexes(ctx, preferencesCollection, indexes)
 }
 
-// GetByUserID retrieves preferences for a specific user
+// GetByUserID retrieves preferences for a specific user with tenant isolation
 func (r *PreferencesRepository) GetByUserID(ctx context.Context, tenantID, userID string) (*domain.NotificationPreferences, error) {
 	var prefs domain.NotificationPreferences
-	filter := bson.M{"tenantId": tenantID, "userId": userID}
+	filter := bson.M{
+		"tenantId":  tenantID,
+		"userId":    userID,
+		"deletedAt": nil,
+	}
 	err := r.client.Collection(preferencesCollection).FindOne(ctx, filter).Decode(&prefs)
 
 	if err == mongo.ErrNoDocuments {
@@ -65,20 +69,35 @@ func (r *PreferencesRepository) GetByUserID(ctx context.Context, tenantID, userI
 // Create creates new preferences
 func (r *PreferencesRepository) Create(ctx context.Context, prefs *domain.NotificationPreferences) error {
 	prefs.ID = primitive.NewObjectID()
+	prefs.Version = 1
 	prefs.CreatedAt = time.Now()
 	prefs.UpdatedAt = time.Now()
+	prefs.DeletedAt = nil
 
 	_, err := r.client.Collection(preferencesCollection).InsertOne(ctx, prefs)
 	return err
 }
 
-// Update updates preferences
+// Update updates preferences with optimistic locking and tenant isolation
 func (r *PreferencesRepository) Update(ctx context.Context, prefs *domain.NotificationPreferences) error {
 	prefs.UpdatedAt = time.Now()
-	filter := bson.M{"tenantId": prefs.TenantID, "userId": prefs.UserID}
+	prefs.Version++
+
+	filter := bson.M{
+		"tenantId":  prefs.TenantID,
+		"userId":    prefs.UserID,
+		"deletedAt": nil,
+		"version":   prefs.Version - 1,
+	}
 	update := bson.M{"$set": prefs}
 	opts := options.Update().SetUpsert(true)
 
-	_, err := r.client.Collection(preferencesCollection).UpdateOne(ctx, filter, update, opts)
-	return err
+	result, err := r.client.Collection(preferencesCollection).UpdateOne(ctx, filter, update, opts)
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 && result.UpsertedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+	return nil
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/vhvplatform/go-notification-service/internal/dlq"
+	"github.com/vhvplatform/go-notification-service/internal/middleware"
 	"github.com/vhvplatform/go-notification-service/internal/service"
 	"github.com/vhvplatform/go-notification-service/internal/shared/errors"
 	"github.com/vhvplatform/go-notification-service/internal/shared/logger"
@@ -29,10 +30,13 @@ func NewDLQHandler(dlq *dlq.DeadLetterQueue, service *service.NotificationServic
 
 // GetFailedNotifications retrieves failed notifications from DLQ
 func (h *DLQHandler) GetFailedNotifications(c *gin.Context) {
+	// Extract tenant ID from authenticated context
+	tenantID := middleware.MustGetTenantID(c)
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
-	failed, total, err := h.dlq.GetAll(c.Request.Context(), page, pageSize)
+	failed, total, err := h.dlq.GetAll(c.Request.Context(), tenantID, page, pageSize)
 	if err != nil {
 		h.log.Error("Failed to get failed notifications", "error", err)
 		c.JSON(http.StatusInternalServerError, errors.NewInternalError("Failed to get failed notifications", err))
@@ -49,9 +53,12 @@ func (h *DLQHandler) GetFailedNotifications(c *gin.Context) {
 
 // RetryNotification retries a failed notification
 func (h *DLQHandler) RetryNotification(c *gin.Context) {
+	// Extract tenant ID from authenticated context
+	tenantID := middleware.MustGetTenantID(c)
+
 	id := c.Param("id")
 
-	if err := h.dlq.Retry(c.Request.Context(), id, h.service); err != nil {
+	if err := h.dlq.Retry(c.Request.Context(), id, tenantID, h.service); err != nil {
 		h.log.Error("Failed to retry notification", "error", err, "id", id)
 		c.JSON(http.StatusInternalServerError, errors.NewInternalError("Failed to retry notification", err))
 		return

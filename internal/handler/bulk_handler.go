@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/vhvplatform/go-notification-service/internal/domain"
+	"github.com/vhvplatform/go-notification-service/internal/middleware"
 	"github.com/vhvplatform/go-notification-service/internal/service"
 	"github.com/vhvplatform/go-notification-service/internal/shared/errors"
 	"github.com/vhvplatform/go-notification-service/internal/shared/logger"
@@ -26,14 +27,20 @@ func NewBulkHandler(bulkEmailService *service.BulkEmailService, log *logger.Logg
 
 // SendBulkEmail handles bulk email requests
 func (h *BulkHandler) SendBulkEmail(c *gin.Context) {
+	// Extract tenant_id from authenticated context
+	tenantID := middleware.MustGetTenantID(c)
+
 	var req domain.BulkEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, errors.NewValidationError("Invalid request", err))
 		return
 	}
 
+	// Set tenant_id from authenticated context
+	req.TenantID = tenantID
+
 	if err := h.bulkEmailService.SendBulk(c.Request.Context(), &req); err != nil {
-		h.log.Error("Failed to queue bulk emails", "error", err)
+		h.log.Error("Failed to queue bulk emails", "error", err, "tenant_id", tenantID)
 		c.JSON(http.StatusInternalServerError, errors.NewInternalError("Failed to queue bulk emails", err))
 		return
 	}

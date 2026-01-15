@@ -16,8 +16,10 @@ type ScheduledNotification struct {
 	NextRunAt time.Time          `json:"next_run_at" bson:"nextRunAt"`
 	LastRunAt *time.Time         `json:"last_run_at,omitempty" bson:"lastRunAt,omitempty"`
 	IsActive  bool               `json:"is_active" bson:"isActive"`
+	Version   int                `json:"version" bson:"version"`
 	CreatedAt time.Time          `json:"created_at" bson:"createdAt"`
 	UpdatedAt time.Time          `json:"updated_at" bson:"updatedAt"`
+	DeletedAt *time.Time         `json:"deleted_at,omitempty" bson:"deletedAt,omitempty"`
 }
 
 // NotificationPreferences represents user notification preferences
@@ -33,6 +35,8 @@ type NotificationPreferences struct {
 	QuietHoursStart string             `json:"quiet_hours_start" bson:"quietHoursStart"` // "22:00"
 	QuietHoursEnd   string             `json:"quiet_hours_end" bson:"quietHoursEnd"`     // "08:00"
 	Timezone        string             `json:"timezone" bson:"timezone"`
+	Version         int                `json:"version" bson:"version"`
 	CreatedAt       time.Time          `json:"created_at" bson:"createdAt"`
 	UpdatedAt       time.Time          `json:"updated_at" bson:"updatedAt"`
+	DeletedAt       *time.Time         `json:"deleted_at,omitempty" bson:"deletedAt,omitempty"`
 }

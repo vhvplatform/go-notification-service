@@ -57,14 +57,14 @@ func (dlq *DeadLetterQueue) Add(ctx context.Context, notification *domain.Notifi
 	return dlq.repo.Create(ctx, failed)
 }
 
-// GetAll retrieves all failed notifications
-func (dlq *DeadLetterQueue) GetAll(ctx context.Context, page, pageSize int) ([]*domain.FailedNotification, int64, error) {
-	return dlq.repo.FindAll(ctx, page, pageSize)
+// GetAll retrieves all failed notifications for a specific tenant
+func (dlq *DeadLetterQueue) GetAll(ctx context.Context, tenantID string, page, pageSize int) ([]*domain.FailedNotification, int64, error) {
+	return dlq.repo.FindAll(ctx, tenantID, page, pageSize)
 }
 
-// Retry retries a failed notification
-func (dlq *DeadLetterQueue) Retry(ctx context.Context, id string, notificationService NotificationService) error {
-	failed, err := dlq.repo.FindByID(ctx, id)
+// Retry retries a failed notification with tenant isolation
+func (dlq *DeadLetterQueue) Retry(ctx context.Context, id string, tenantID string, notificationService NotificationService) error {
+	failed, err := dlq.repo.FindByID(ctx, id, tenantID)
 	if err != nil {
 		return fmt.Errorf("failed to find notification: %w", err)
 	}

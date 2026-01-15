@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
 	"github.com/vhvplatform/go-notification-service/internal/domain"
+	"github.com/vhvplatform/go-notification-service/internal/middleware"
 	"github.com/vhvplatform/go-notification-service/internal/repository"
 	"github.com/vhvplatform/go-notification-service/internal/scheduler"
 	"github.com/vhvplatform/go-notification-service/internal/shared/errors"
@@ -32,18 +33,15 @@ func NewScheduleHandler(repo *repository.ScheduledNotificationRepository, schedu
 
 // GetSchedules retrieves scheduled notifications
 func (h *ScheduleHandler) GetSchedules(c *gin.Context) {
-	tenantID := c.Query("tenant_id")
-	if tenantID == "" {
-		c.JSON(http.StatusBadRequest, errors.NewValidationError("tenant_id is required", nil))
-		return
-	}
+	// Extract tenant_id from authenticated context
+	tenantID := middleware.MustGetTenantID(c)
 
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 
 	schedules, total, err := h.repo.FindByTenantID(c.Request.Context(), tenantID, page, pageSize)
 	if err != nil {
-		h.log.Error("Failed to get schedules", "error", err)
+		h.log.Error("Failed to get schedules", "error", err, "tenant_id", tenantID)
 		c.JSON(http.StatusInternalServerError, errors.NewInternalError("Failed to get schedules", err))
 		return
 	}
@@ -58,11 +56,17 @@ func (h *ScheduleHandler) GetSchedules(c *gin.Context) {
 
 // CreateSchedule creates a new scheduled notification
 func (h *ScheduleHandler) CreateSchedule(c *gin.Context) {
+	// Extract tenant_id from authenticated context
+	tenantID := middleware.MustGetTenantID(c)
+
 	var sched domain.ScheduledNotification
 	if err := c.ShouldBindJSON(&sched); err != nil {
 		c.JSON(http.StatusBadRequest, errors.NewValidationError("Invalid request", err))
 		return
 	}
+
+	// Set tenant_id from authenticated context
+	sched.TenantID = tenantID
 
 	// Validate cron expression
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow)
@@ -78,7 +82,7 @@ func (h *ScheduleHandler) CreateSchedule(c *gin.Context) {
 
 	// Add schedule
 	if err := h.scheduler.AddSchedule(&sched); err != nil {
-		h.log.Error("Failed to create schedule", "error", err)
+		h.log.Error("Failed to create schedule", "error", err, "tenant_id", tenantID)
 		c.JSON(http.StatusInternalServerError, errors.NewInternalError("Failed to create schedule", err))
 		return
 	}

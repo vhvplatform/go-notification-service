@@ -19,9 +19,9 @@ const templatesCollection = "email_templates"
 
 // Security constants for cache
 const (
-	maxCacheSize     = 1000              // Maximum number of cached templates
-	maxCacheKeyLen   = 512               // Maximum length of cache key
-	maxTemplateSize  = 1024 * 1024       // Maximum template size: 1MB
+	maxCacheSize    = 1000        // Maximum number of cached templates
+	maxCacheKeyLen  = 512         // Maximum length of cache key
+	maxTemplateSize = 1024 * 1024 // Maximum template size: 1MB
 )
 
 // TemplateCache holds cached templates with security controls
@@ -184,15 +184,17 @@ func (r *TemplateRepository) EnsureIndexes(ctx context.Context) error {
 // Create creates a new template
 func (r *TemplateRepository) Create(ctx context.Context, template *domain.EmailTemplate) error {
 	template.ID = primitive.NewObjectID()
+	template.Version = 1
 	template.CreatedAt = time.Now()
 	template.UpdatedAt = time.Now()
+	template.DeletedAt = nil
 
 	_, err := r.client.Collection(templatesCollection).InsertOne(ctx, template)
 	return err
 }
 
-// FindByID finds a template by ID with caching
-func (r *TemplateRepository) FindByID(ctx context.Context, id string) (*domain.EmailTemplate, error) {
+// FindByID finds a template by ID with caching and tenant isolation
+func (r *TemplateRepository) FindByID(ctx context.Context, id string, tenantID string) (*domain.EmailTemplate, error) {
 	// Check cache first
 	cacheKey := "id:" + id
 	if template, found := r.cache.Get(cacheKey); found {
@@ -205,7 +207,12 @@ func (r *TemplateRepository) FindByID(ctx context.Context, id string) (*domain.E
 	}
 
 	var template domain.EmailTemplate
-	err = r.client.Collection(templatesCollection).FindOne(ctx, bson.M{"_id": objectID}).Decode(&template)
+	filter := bson.M{
+		"_id":       objectID,
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}
+	err = r.client.Collection(templatesCollection).FindOne(ctx, filter).Decode(&template)
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +232,11 @@ func (r *TemplateRepository) FindByName(ctx context.Context, tenantID, name stri
 	}
 
 	var template domain.EmailTemplate
-	filter := bson.M{"tenantId": tenantID, "name": name}
+	filter := bson.M{
+		"tenantId":  tenantID,
+		"name":      name,
+		"deletedAt": nil,
+	}
 	err := r.client.Collection(templatesCollection).FindOne(ctx, filter).Decode(&template)
 	if err != nil {
 		return nil, err
@@ -237,39 +248,65 @@ func (r *TemplateRepository) FindByName(ctx context.Context, tenantID, name stri
 	return &template, nil
 }
 
-// Update updates a template and invalidates cache
+// Update updates a template and invalidates cache with optimistic locking
 func (r *TemplateRepository) Update(ctx context.Context, template *domain.EmailTemplate) error {
 	template.UpdatedAt = time.Now()
+	template.Version++
 
-	filter := bson.M{"_id": template.ID}
+	filter := bson.M{
+		"_id":       template.ID,
+		"tenantId":  template.TenantID,
+		"deletedAt": nil,
+		"version":   template.Version - 1,
+	}
 	update := bson.M{"$set": template}
 
-	_, err := r.client.Collection(templatesCollection).UpdateOne(ctx, filter, update)
-	
-	// Invalidate cache entries
-	if err == nil {
-		r.cache.Invalidate("id:" + template.ID.Hex())
-		r.cache.Invalidate("tenant:" + template.TenantID + ":name:" + template.Name)
+	result, err := r.client.Collection(templatesCollection).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
 	}
 
-	return err
+	// Invalidate cache entries
+	r.cache.Invalidate("id:" + template.ID.Hex())
+	r.cache.Invalidate("tenant:" + template.TenantID + ":name:" + template.Name)
+
+	return nil
 }
 
-// Delete deletes a template and invalidates cache
-func (r *TemplateRepository) Delete(ctx context.Context, id string) error {
+// SoftDelete marks a template as deleted (soft delete) with tenant isolation
+func (r *TemplateRepository) SoftDelete(ctx context.Context, id string, tenantID string) error {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return err
 	}
 
-	// Invalidate cache by ID (we know the ID)
-	r.cache.Invalidate("id:" + id)
-	
-	// Note: We cannot invalidate by tenant_id:name without fetching the template first.
-	// This is an acceptable trade-off as Delete operations are infrequent and cache entries
-	// will naturally expire based on TTL. Alternatively, we could maintain a reverse lookup
-	// cache but that adds complexity for minimal benefit.
+	now := time.Now()
+	filter := bson.M{
+		"_id":       objectID,
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}
+	update := bson.M{
+		"$set": bson.M{
+			"deletedAt": now,
+			"updatedAt": now,
+		},
+		"$inc": bson.M{"version": 1},
+	}
 
-	_, err = r.client.Collection(templatesCollection).DeleteOne(ctx, bson.M{"_id": objectID})
-	return err
+	result, err := r.client.Collection(templatesCollection).UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if result.MatchedCount == 0 {
+		return mongo.ErrNoDocuments
+	}
+
+	// Invalidate cache by ID
+	r.cache.Invalidate("id:" + id)
+
+	return nil
 }

@@ -48,21 +48,29 @@ func (r *FailedNotificationRepository) EnsureIndexes(ctx context.Context) error 
 // Create creates a new failed notification record
 func (r *FailedNotificationRepository) Create(ctx context.Context, failed *domain.FailedNotification) error {
 	failed.ID = primitive.NewObjectID()
+	failed.Version = 1
 	failed.CreatedAt = time.Now()
+	failed.UpdatedAt = time.Now()
+	failed.DeletedAt = nil
 
 	_, err := r.client.Collection(failedNotificationsCollection).InsertOne(ctx, failed)
 	return err
 }
 
-// FindByID finds a failed notification by ID
-func (r *FailedNotificationRepository) FindByID(ctx context.Context, id string) (*domain.FailedNotification, error) {
+// FindByID finds a failed notification by ID with tenant isolation
+func (r *FailedNotificationRepository) FindByID(ctx context.Context, id string, tenantID string) (*domain.FailedNotification, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
 	var failed domain.FailedNotification
-	err = r.client.Collection(failedNotificationsCollection).FindOne(ctx, bson.M{"_id": objectID}).Decode(&failed)
+	filter := bson.M{
+		"_id":       objectID,
+		"tenantId":  tenantID,
+		"deletedAt": nil,
+	}
+	err = r.client.Collection(failedNotificationsCollection).FindOne(ctx, filter).Decode(&failed)
 	if err != nil {
 		return nil, err
 	}
@@ -70,13 +78,22 @@ func (r *FailedNotificationRepository) FindByID(ctx context.Context, id string) 
 	return &failed, nil
 }
 
-// FindAll retrieves all failed notifications with pagination using optimized aggregation
-func (r *FailedNotificationRepository) FindAll(ctx context.Context, page, pageSize int) ([]*domain.FailedNotification, int64, error) {
+// FindAll retrieves all failed notifications for a specific tenant with pagination
+func (r *FailedNotificationRepository) FindAll(ctx context.Context, tenantID string, page, pageSize int) ([]*domain.FailedNotification, int64, error) {
 	// Calculate pagination
 	skip := (page - 1) * pageSize
 
+	// Tenant isolation and soft delete filter
+	matchStage := bson.M{
+		"$match": bson.M{
+			"tenantId":  tenantID,
+			"deletedAt": nil,
+		},
+	}
+
 	// Use aggregation pipeline for efficient count + results in one query
 	pipeline := mongo.Pipeline{
+		matchStage,
 		{{Key: "$facet", Value: bson.M{
 			"metadata": bson.A{bson.M{"$count": "total"}},
 			"data": bson.A{
